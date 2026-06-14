@@ -60,6 +60,8 @@ Return ONLY valid JSON: { "primaryKeyword": "...", "secondaryKeywords": [], "tag
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error("Invalid AI response");
     content = JSON.parse(jsonMatch[0]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const jsonContent = content as any;
 
     // Upsert section (replace if same type already exists)
     const existing = await db.projectSection.findFirst({ where: { projectId, type } });
@@ -67,10 +69,10 @@ Return ONLY valid JSON: { "primaryKeyword": "...", "secondaryKeywords": [], "tag
     if (existing) {
       section = await db.projectSection.update({
         where: { id: existing.id },
-        data: { content, version: existing.version + 1 },
+        data: { content: jsonContent, version: existing.version + 1 },
       });
     } else {
-      section = await db.projectSection.create({ data: { projectId, type, content } });
+      section = await db.projectSection.create({ data: { projectId, type, content: jsonContent } });
     }
 
     return NextResponse.json({ section });
