@@ -3,16 +3,32 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import type { CreatorBlueprint } from "@prisma/client";
+type Blueprint = {
+  id: string;
+  profileId: string;
+  niche: string;
+  targetAudience: string;
+  contentPillars: string[];
+  brandVoice: string;
+  videoFormats: string[];
+  postingSchedule: string;
+  growthRoadmap: string;
+  monetization: string;
+  weaknesses: string;
+  advantages: string;
+  rawJson: unknown;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 interface Props {
   userId: string;
   userName: string;
-  existingBlueprint: CreatorBlueprint | null;
+  existingBlueprint: Blueprint | null;
 }
 
 export function BlueprintClient({ userId, userName, existingBlueprint }: Props) {
-  const [blueprint, setBlueprint] = useState<CreatorBlueprint | null>(existingBlueprint);
+  const [blueprint, setBlueprint] = useState<Blueprint | null>(existingBlueprint);
   const [loading, setLoading] = useState(!existingBlueprint);
   const [error, setError] = useState("");
 
