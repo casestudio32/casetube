@@ -14,73 +14,73 @@ const glassCard = {
 
 export function MonetizationCTA() {
   return (
-    <section className="relative w-full bg-[#080808] overflow-hidden" style={{ minHeight: "520px" }}>
-      <div className="max-w-7xl mx-auto flex items-stretch" style={{ minHeight: "520px" }}>
+    <section className="relative w-full bg-[#080808] overflow-hidden">
+      <div
+        className="max-w-7xl mx-auto flex items-center px-8 md:px-16 lg:px-24"
+        style={{ minHeight: "480px" }}
+      >
 
-        {/* Left — copy, vertically centered */}
+        {/* Left — copy */}
         <motion.div
           initial={{ opacity: 0, x: -24 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="flex-1 flex flex-col justify-center z-10 px-8 md:px-16 lg:px-20 py-20"
+          className="flex flex-col justify-center py-16 z-10"
+          style={{ flex: "0 0 52%" }}
         >
-          <h2 className="text-5xl md:text-6xl font-black text-white leading-[1.08] mb-6">
-            Grow your channel<br />faster than ever.
+          <h2 className="text-5xl font-black text-white leading-[1.08] mb-5">
+            Grow your channel faster<br />than ever.
           </h2>
-          <p className="text-zinc-400 text-lg leading-relaxed mb-8 max-w-md">
+          <p className="text-zinc-400 text-base leading-relaxed mb-8 max-w-md">
             CaseTube gives you a personalised AI roadmap — real keyword data, daily content ideas, competitor intel, and a full video workflow. Everything a YouTube creator needs, in one place.
           </p>
           <div>
             <Link
               href="/signup"
-              className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white font-bold text-base px-8 py-4 rounded-full transition-colors"
+              className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white font-bold text-sm px-6 py-3 rounded-lg transition-colors"
             >
               Get Started Free
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 12h14M12 5l7 7-7 7"/>
               </svg>
             </Link>
           </div>
         </motion.div>
 
-        {/* Right — image fills this half, cards positioned relative to it */}
+        {/* Right — fixed-width container, image + cards */}
         <motion.div
           initial={{ opacity: 0, x: 24 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="relative flex-1"
+          className="relative"
+          style={{ flex: "0 0 48%", height: "480px" }}
         >
-          {/* Image fills the entire right half */}
-          <Image
-            src="/Images/Man.png"
-            alt="Creator using CaseTube"
-            fill
-            className="object-contain object-bottom"
-            sizes="50vw"
-          />
+          {/* Person — contained, bottom-aligned, fixed width so position is predictable */}
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2" style={{ width: "340px", height: "440px" }}>
+            <Image
+              src="/Images/Man.png"
+              alt="Creator using CaseTube"
+              fill
+              className="object-contain object-bottom"
+              sizes="340px"
+            />
+            {/* Bottom fade */}
+            <div
+              className="absolute bottom-0 left-0 right-0 pointer-events-none"
+              style={{ height: "100px", background: "linear-gradient(to top, #080808 15%, transparent)" }}
+            />
+          </div>
 
-          {/* Bottom fade into background */}
-          <div
-            className="absolute bottom-0 left-0 right-0 pointer-events-none z-10"
-            style={{ height: "160px", background: "linear-gradient(to top, #080808 20%, transparent)" }}
-          />
-
-          {/* Left fade so image blends into copy section */}
-          <div
-            className="absolute top-0 left-0 bottom-0 pointer-events-none z-10"
-            style={{ width: "120px", background: "linear-gradient(to right, #080808, transparent)" }}
-          />
-
-          {/* Card 1 — Subscribers — top-left of right half, near shoulder */}
+          {/* Card 1 — Subscribers — left side, at shoulder height (~30% down) */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.45, duration: 0.5 }}
             className="absolute z-20 rounded-2xl px-4 py-3.5"
-            style={{ top: "12%", left: "8%", minWidth: "185px", ...glassCard }}
+            style={{ top: "22%", left: "0%", minWidth: "175px", ...glassCard }}
           >
             <div className="flex items-center gap-2 mb-2">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -96,14 +96,14 @@ export function MonetizationCTA() {
             </div>
           </motion.div>
 
-          {/* Card 2 — Watch Hours — bottom-right, near the phone hand */}
+          {/* Card 2 — Watch Hours — right side, at hand/phone height (~55% down) */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.6, duration: 0.5 }}
             className="absolute z-20 rounded-2xl px-4 py-3.5"
-            style={{ bottom: "28%", right: "6%", minWidth: "185px", ...glassCard }}
+            style={{ top: "52%", right: "0%", minWidth: "175px", ...glassCard }}
           >
             <div className="flex items-center gap-2 mb-2">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
