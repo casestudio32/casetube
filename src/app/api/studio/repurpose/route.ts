@@ -10,18 +10,19 @@ export async function POST(req: Request) {
     const memory = userId ? await db.creatorMemory.findUnique({ where: { userId } }) : null;
     const context = memory ? `Brand voice: ${memory.brandVoice}. Niche: ${memory.niche}.` : "";
 
-    const intel = await getNicheIntelligence(memory?.niche || title, title);
+    const intel = await getNicheIntelligence(title, title);
     const youtubeContext = intel ? formatNicheContext(intel) : "";
 
     const prompt = `You are a content repurposing expert. Take this YouTube video and repurpose it across platforms.
 
 Video title: "${title}"
 ${summary ? `Summary: ${summary}` : ""}
-${context}
+Creator context: ${context}
 
+REAL YOUTUBE DATA FOR "${title}":
 ${youtubeContext}
 
-Use the real niche data above to inform the language, hooks, and keywords used across all repurposed content. The shorts hooks and social posts should reference what's working in this niche.
+Use the real niche data above to inform the language, hooks, and keywords used across all repurposed content. Every Short and social post must be specifically about "${title}" — not generic creator advice. The hooks and posts should reference what's working in this niche.
 
 Return ONLY valid JSON:
 {

@@ -10,15 +10,15 @@ export async function POST(req: Request) {
     const memory = userId ? await db.creatorMemory.findUnique({ where: { userId } }) : null;
     const context = memory ? `Brand voice: ${memory.brandVoice}. Audience: ${memory.targetAudience}. Niche: ${memory.niche}.` : "";
 
-    const nicheQuery = memory?.niche ? `${topic} ${memory.niche}` : topic;
-    const intel = await getNicheIntelligence(nicheQuery, topic);
+    const intel = await getNicheIntelligence(topic, topic);
     const youtubeContext = intel ? formatNicheContext(intel) : "";
 
     const prompt = `You are a YouTube hook specialist. The first 30 seconds of a video determine everything. Write 6 powerful hooks for a video about: "${topic}"
 
+REAL YOUTUBE DATA FOR "${topic}":
 ${youtubeContext}
 
-${context}
+Creator context: ${context}
 
 Study how the top-performing videos in this niche open their content. Your hooks must reflect the energy, language, and emotional triggers that are ACTUALLY working in this niche right now — not generic hook formulas.
 

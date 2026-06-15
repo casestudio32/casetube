@@ -8,39 +8,42 @@ export async function POST(req: Request) {
     const { topic, keyword, userId } = await req.json();
 
     const memory = userId ? await db.creatorMemory.findUnique({ where: { userId } }) : null;
-    const context = memory ? `Brand voice: ${memory.brandVoice}. Niche: ${memory.niche}. Audience: ${memory.targetAudience}.` : "";
+    const context = memory ? `Brand voice: ${memory.brandVoice}. Audience: ${memory.targetAudience}.` : "";
 
-    // Fetch real YouTube data
-    const nicheQuery = memory?.niche ? `${topic} ${memory.niche}` : topic;
-    const intel = await getNicheIntelligence(nicheQuery, topic);
+    const intel = await getNicheIntelligence(topic, topic);
     const youtubeContext = intel ? formatNicheContext(intel) : "";
 
-    const prompt = `You are a YouTube title expert. Generate 8 optimised titles for: "${topic}"
+    const prompt = `You are a YouTube title expert. Generate 8 optimised titles for a video about: "${topic}"
 ${keyword ? `Target keyword: "${keyword}"` : ""}
 
+REAL YOUTUBE DATA FOR "${topic}":
 ${youtubeContext}
 
-${context}
+Creator context: ${context}
 
-Study the top-performing titles above carefully — their exact word order, structure, emotional triggers, use of numbers, and power words. Your titles must be modelled on what is ACTUALLY getting clicks in this niche right now, not generic YouTube advice.
+The titles above are ACTUALLY ranking and getting views on YouTube right now for this topic. Study them closely:
+- What word patterns appear repeatedly?
+- How do they use numbers, brackets, or power words?
+- What emotional triggers are they using?
+- How specific vs. broad are they?
 
-For each title, explain specifically which pattern from the top videos it borrows from.
+Now write 8 titles for "${topic}" that apply those exact patterns. Each title must be unmistakably about "${topic}" — not a generic YouTube title that could apply to anything.
 
 Return ONLY valid JSON:
 {
   "titles": [
     {
-      "title": "The exact title",
+      "title": "The exact title — specific to ${topic}",
       "type": "Curiosity | How-To | List | Story | Controversy | Benefit | Challenge",
       "score": 92,
-      "reasoning": "Which top video pattern this borrows from and why it will perform",
+      "reasoning": "Which specific pattern from the top videos this borrows and why it will perform",
       "keyword": "the keyword naturally included"
     }
   ],
   "tips": [
-    "Specific insight from the top videos in this niche about what makes titles click",
-    "Another niche-specific tip",
-    "A third actionable tip"
+    "Specific pattern observed in the top ${topic} titles that you applied",
+    "Second specific insight from the real data",
+    "Third actionable tip based on what's actually working"
   ]
 }
 

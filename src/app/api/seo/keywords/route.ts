@@ -11,42 +11,43 @@ export async function POST(req: Request) {
     const memory = userId ? await db.creatorMemory.findUnique({ where: { userId } }) : null;
     const context = memory ? `Creator niche: ${memory.niche}. Target audience: ${memory.targetAudience}.` : "";
 
-    // Fetch real YouTube data for this topic
-    const nicheQuery = memory?.niche ? `${topic} ${memory.niche}` : topic;
-    const intel = await getNicheIntelligence(nicheQuery, topic);
+    const intel = await getNicheIntelligence(topic, topic);
     const youtubeContext = intel ? formatNicheContext(intel) : "";
 
-    const prompt = `You are a YouTube SEO expert. Analyse the topic "${topic}" and generate a comprehensive keyword research report backed by real YouTube data.
+    const prompt = `You are a YouTube SEO expert. A creator wants to rank for: "${topic}".
 
+REAL YOUTUBE DATA FOR "${topic}":
 ${youtubeContext}
 
-${context}
+Creator context: ${context}
 
-Using the real YouTube data above — the actual titles, views, and patterns from top-performing videos — generate a keyword report that reflects what people are genuinely searching for and clicking on right now.
+The data above shows ACTUAL videos currently ranking on YouTube for this topic — their real titles, real view counts, and real keywords. Use this data as your source of truth.
+
+Your job: Extract what's working and find the gaps. What keywords appear in the top titles? What questions are viewers searching? Where is there low competition but high demand?
 
 Return ONLY valid JSON:
 {
-  "primaryKeyword": "the best main keyword based on what top videos are ranking for",
-  "searchVolume": "estimated monthly searches based on niche activity",
+  "primaryKeyword": "the exact search phrase most top videos are optimising for",
+  "searchVolume": "estimated monthly searches based on niche activity level",
   "competition": "Low | Medium | High",
   "opportunityScore": 85,
   "keywords": [
-    { "keyword": "exact keyword phrase from niche data", "intent": "Informational | Commercial | Navigational", "difficulty": "Easy | Medium | Hard", "opportunity": "High | Medium | Low" }
+    { "keyword": "keyword pulled directly from top video titles/topics", "intent": "Informational | Commercial | Navigational", "difficulty": "Easy | Medium | Hard", "opportunity": "High | Medium | Low" }
   ],
   "longTail": [
-    { "keyword": "long tail keyword opportunity", "why": "why this specific keyword is a good gap in this niche" }
+    { "keyword": "specific long-tail phrase a viewer would type", "why": "why this is a gap or opportunity based on the real data" }
   ],
   "questions": [
-    "Question people search related to this topic?"
+    "Question people actually search when looking for this topic"
   ],
   "contentAngles": [
-    { "angle": "Specific content angle title that could beat the top videos", "hook": "why this angle would outperform existing content" }
+    { "angle": "Specific title that could outperform existing top videos", "hook": "What makes this angle better than what currently ranks" }
   ],
-  "searchIntent": "What viewers actually want when searching this topic based on the top performing content",
-  "competitorTip": "One specific insight from the top performing videos on how to outrank them"
+  "searchIntent": "What viewers actually want when they search this — based on the top performing content above",
+  "competitorTip": "One specific, actionable insight from studying the top videos above"
 }
 
-Generate 8 keywords, 6 long-tail keywords, 5 questions, 4 content angles. Base everything on the real YouTube data provided. Return only JSON.`;
+Generate 8 keywords, 6 long-tail, 5 questions, 4 angles. Every item must be grounded in the real YouTube data above — no generic advice. Return only JSON.`;
 
     const response = await generateAI({
       messages: [{ role: "user", content: prompt }],

@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     const context = memory ? `Channel niche: ${memory.niche}. Brand voice: ${memory.brandVoice}. Target audience: ${memory.targetAudience}.` : "";
 
     // Fetch real YouTube data
-    const intel = await getNicheIntelligence(memory?.niche || title, title);
+    const intel = await getNicheIntelligence(title, title);
     const youtubeContext = intel ? formatNicheContext(intel) : "";
 
     const prompt = `You are a YouTube SEO specialist. Write a fully optimised description for: "${title}"

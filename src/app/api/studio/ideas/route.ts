@@ -9,38 +9,44 @@ export async function POST(req: Request) {
 
     const memory = userId ? await db.creatorMemory.findUnique({ where: { userId } }) : null;
     const context = memory
-      ? `Niche: ${memory.niche}. Audience: ${memory.targetAudience}. Content pillars: ${memory.contentPillars?.join(", ")}.`
+      ? `Creator niche: ${memory.niche}. Target audience: ${memory.targetAudience}. Content pillars: ${memory.contentPillars?.join(", ")}.`
       : "";
 
-    const nicheQuery = topic || memory?.niche || "youtube content";
-    const intel = await getNicheIntelligence(nicheQuery, topic || memory?.niche || "");
+    const searchQuery = topic || memory?.niche || "youtube content creation";
+    const intel = await getNicheIntelligence(searchQuery, searchQuery);
     const youtubeContext = intel ? formatNicheContext(intel) : "";
 
-    const prompt = `You are a YouTube content strategist. Generate 10 high-performing video ideas${topic ? ` about "${topic}"` : " based on the creator's niche"}.
+    const prompt = `You are a YouTube content strategist. A creator wants video ideas about: "${searchQuery}".
 
+REAL YOUTUBE DATA FOR "${searchQuery}":
 ${youtubeContext}
 
-${context}
+Creator context: ${context}
 
-Study the real top-performing videos above. Your ideas must be directly inspired by what is ACTUALLY getting views in this niche right now — not generic content advice. Look at the titles, view counts, and patterns in the data above and generate ideas that could compete with or outperform those specific videos.
+The videos above are ACTUALLY performing on YouTube right now for "${searchQuery}". These are real titles with real view counts. Your job is to study what's working and generate ideas that are:
+1. Directly about "${searchQuery}" — not loosely related topics
+2. Modelled on the title structures, formats, and angles of the top performers above
+3. Offering a fresh angle that doesn't duplicate what already exists
+
+Do NOT generate generic YouTube advice ideas. Every idea must be something a viewer searching "${searchQuery}" would immediately want to click.
 
 Return ONLY valid JSON:
 {
   "ideas": [
     {
-      "title": "Compelling video title (modelled on patterns from top performers)",
-      "hook": "The opening line that grabs attention in the first 5 seconds",
-      "angle": "The unique angle that makes this different from the top videos already out there",
+      "title": "Specific, clickable title directly about ${searchQuery} — modelled on top performers",
+      "hook": "The exact opening line for this video (word for word, specific to the topic)",
+      "angle": "What makes this different from the videos already ranking — based on the gaps you see in the data",
       "format": "Tutorial | List | Story | Case Study | Reaction | Interview | Challenge",
       "estimatedLength": "8-12 mins",
       "difficulty": "Easy | Medium | Hard",
       "potential": "High | Medium | Low",
-      "whyItWorks": "Specific reason based on what the top videos in this niche are doing"
+      "whyItWorks": "Specific reason based on the real YouTube data above — reference actual patterns you observed"
     }
   ]
 }
 
-Make ideas specific. Vary the formats. Base everything on the real YouTube data above. Return only JSON.`;
+Generate 10 ideas. Every idea must be specifically about "${searchQuery}". Return only JSON.`;
 
     const response = await generateAI({
       messages: [{ role: "user", content: prompt }],

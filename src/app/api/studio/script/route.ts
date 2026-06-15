@@ -12,7 +12,7 @@ export async function POST(req: Request) {
       ? `Brand voice: ${memory.brandVoice}. Audience: ${memory.targetAudience}. Niche: ${memory.niche}.`
       : "";
 
-    const intel = await getNicheIntelligence(memory?.niche || title, title);
+    const intel = await getNicheIntelligence(title, title);
     const youtubeContext = intel ? formatNicheContext(intel) : "";
 
     const prompt = `You are a professional YouTube scriptwriter. Write a complete, engaging video script.

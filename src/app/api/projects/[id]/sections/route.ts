@@ -19,31 +19,31 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const title = project.title;
     const topic = project.videoTopic || title;
 
-    // Fetch real YouTube data for this niche/topic
-    const nicheQuery = memory?.niche ? `${topic} ${memory.niche}` : topic;
-    const intel = await getNicheIntelligence(nicheQuery, topic);
+    // Fetch real YouTube data specifically for the project topic
+    const intel = await getNicheIntelligence(topic, topic);
     const youtubeContext = intel ? formatNicheContext(intel) : "";
 
     let prompt = "";
 
     if (type === "IDEAS") {
-      prompt = `You are a YouTube strategist who studies what actually works on the platform. Generate 5 specific video ideas for a creator in the "${memory?.niche || topic}" niche.
+      prompt = `You are a YouTube strategist. A creator has a project specifically about: "${topic}".
 
 ${youtubeContext}
 
 Creator context: ${creatorContext}
-Video topic area: "${topic}"
 
-Based on the real YouTube data above, generate 5 video ideas that follow the patterns of what's already getting millions of views in this niche. Each idea should have a fresh angle that doesn't copy but improves on what's working.
+Generate 5 video ideas that are ALL directly about "${topic}" — different angles, formats, or audiences for THIS exact topic. Do NOT generate ideas about the creator's general niche or unrelated subjects. Every idea must be a variation of "${topic}".
+
+Study the top-performing titles above for structure — notice the word order, emotional triggers, and specificity. Apply those patterns to THIS topic.
 
 Return ONLY valid JSON:
 {
   "ideas": [
     {
-      "title": "Specific, clickable YouTube title (study the top titles above for structure)",
-      "angle": "The unique angle that makes this better than existing videos",
-      "targetAudience": "Who specifically will click this",
-      "estimatedViews": "Realistic view estimate based on niche average of ${intel?.avgViews?.toLocaleString() || "unknown"}"
+      "title": "Specific, clickable YouTube title directly about ${topic}",
+      "angle": "What makes this angle on the topic unique or better than what exists",
+      "targetAudience": "Exactly who will search for and click this",
+      "estimatedViews": "Realistic estimate based on niche avg of ${intel?.avgViews?.toLocaleString() || "similar videos"}"
     }
   ]
 }`;
@@ -55,21 +55,21 @@ ${youtubeContext}
 
 Creator context: ${creatorContext}
 
-Study how the top-performing videos in this niche open — they create immediate tension, curiosity or bold claims. Write hooks that match the energy and directness of content getting 500K+ views in this space.
+Every hook must be directly and specifically about "${title}" — reference the exact subject, tool, method, or outcome. No generic "in this video I'll show you" openers. Study how top-performing videos on this exact topic open and match that energy.
 
 Return ONLY valid JSON:
 {
   "hooks": [
     {
-      "hook": "The exact opening lines — 2-4 sentences, word for word what the creator says",
+      "hook": "The exact opening lines — 2-4 sentences, word for word. Must reference ${title} specifically.",
       "type": "Bold Claim | Question | Story | Shocking Stat | Controversy | Promise",
-      "psychology": "The psychological trigger being used and why it works for THIS niche audience",
+      "psychology": "The psychological trigger and why it works for viewers interested in ${topic}",
       "bestFor": "What format or audience segment this hook works best for"
     }
   ]
 }
 
-Rules: Never start with "Hey guys" or "Welcome back". Start mid-action or with a bold statement. Be specific to this topic, not generic.`;
+Rules: Never start with "Hey guys" or "Welcome back". Start mid-action or with a bold statement. Every hook must be unmistakably about THIS specific topic.`;
 
     } else if (type === "TITLE") {
       prompt = `You are a YouTube title expert. Generate 10 optimised titles for a video about: "${topic}" in the ${memory?.niche || "YouTube"} niche.
