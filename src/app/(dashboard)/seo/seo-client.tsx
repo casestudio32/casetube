@@ -12,6 +12,7 @@ interface KeywordRow {
   relatedScore?: number | string;
   searchVolume?: number | string;
   competition?: string;
+  competitionScore?: number;
   overall?: number;
   wordCount?: number;
 }
@@ -188,6 +189,7 @@ function KwTable({
             {showRelated && <Th col="relatedScore" label="Related score" />}
             <Th col="searchVolume" label="Search volume" />
             <Th col="competition" label="Competition" />
+            <Th col="competitionScore" label="Competition score" />
             <Th col="overall" label="Overall" />
             <Th col="wordCount" label="Number of words" />
           </tr>
@@ -216,6 +218,13 @@ function KwTable({
                 {typeof row.searchVolume === "number" ? row.searchVolume.toLocaleString() : row.searchVolume ?? "—"}
               </td>
               <td className="px-4 py-3"><CompBadge comp={row.competition} /></td>
+              <td className="px-4 py-3">
+                {row.competitionScore != null ? (
+                  <span className={`text-xs font-semibold ${row.competitionScore <= 20 ? "text-green-400" : row.competitionScore <= 50 ? "text-yellow-400" : "text-red-400"}`}>
+                    {row.competitionScore.toFixed(1)}
+                  </span>
+                ) : <span className="text-zinc-600 text-xs">—</span>}
+              </td>
               <td className="px-4 py-3"><ScoreChip score={row.overall} /></td>
               <td className="px-4 py-3 text-sm text-zinc-500">{row.wordCount ?? "—"}</td>
             </tr>
@@ -265,6 +274,7 @@ function KeywordExplorer({ userId }: { userId: string }) {
       relatedScore: undefined,
       searchVolume: parseVolume(data.searchVolume),
       competition: data.competition,
+      competitionScore: compNum(data.competition),
       overall: data.opportunityScore,
       wordCount: data.primaryKeyword.split(" ").length,
     },
@@ -273,6 +283,7 @@ function KeywordExplorer({ userId }: { userId: string }) {
       relatedScore: kw.opportunity === "High" ? 1.4 : kw.opportunity === "Medium" ? 1.1 : 0.8,
       searchVolume: estimateVolume(kw.difficulty),
       competition: kw.difficulty,
+      competitionScore: kw.difficulty === "Easy" ? 8 + Math.random() * 12 : kw.difficulty === "Medium" ? 30 + Math.random() * 20 : 60 + Math.random() * 30,
       overall: kw.opportunity === "High" ? 72 : kw.opportunity === "Medium" ? 58 : 44,
       wordCount: kw.keyword.split(" ").length,
     })),
@@ -283,6 +294,7 @@ function KeywordExplorer({ userId }: { userId: string }) {
     why: lt.why,
     searchVolume: estimateVolume("Easy"),
     competition: "Very low",
+    competitionScore: 4 + Math.random() * 10,
     overall: Math.floor(60 + Math.random() * 20),
     wordCount: lt.keyword.split(" ").length,
   })) : [];
@@ -291,6 +303,7 @@ function KeywordExplorer({ userId }: { userId: string }) {
     keyword: q,
     searchVolume: estimateVolume("Easy"),
     competition: "Low",
+    competitionScore: 12 + Math.random() * 15,
     overall: Math.floor(55 + Math.random() * 20),
     wordCount: q.split(" ").length,
   })) : [];
