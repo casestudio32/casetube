@@ -4,6 +4,67 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 
+type YTIntel = {
+  topVideos: { videoId: string; title: string; channelName: string; viewCount: number }[];
+  topTitles: string[];
+  commonKeywords: string[];
+  avgViews: number;
+  insights: string;
+};
+
+function YouTubeIntelPanel({ intel }: { intel: YTIntel }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mb-6 bg-red-500/8 border border-red-500/20 rounded-xl overflow-hidden">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-red-400 text-sm font-semibold">▶ YouTube Intelligence</span>
+          <span className="text-xs text-gray-500">— AI trained on {intel.topVideos.length} real top videos · avg {intel.avgViews.toLocaleString()} views</span>
+        </div>
+        <span className="text-gray-500 text-xs">{open ? "▲ Hide" : "▼ Show data"}</span>
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 pb-4 space-y-3">
+              <div>
+                <p className="text-xs text-gray-400 mb-2 font-medium">Top performing videos in your niche (what the AI studied)</p>
+                <div className="space-y-1.5">
+                  {intel.topVideos.slice(0, 6).map((v, i) => (
+                    <div key={i} className="flex items-center justify-between gap-3 bg-white/5 rounded-lg px-3 py-2">
+                      <p className="text-xs text-gray-300 flex-1 min-w-0 truncate">"{v.title}"</p>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs text-gray-500">{v.channelName}</span>
+                        <span className="text-xs text-green-400 font-medium">{v.viewCount.toLocaleString()} views</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 mb-1.5 font-medium">Keywords dominating this niche</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {intel.commonKeywords.slice(0, 12).map((k, i) => (
+                    <span key={i} className="text-xs px-2 py-0.5 bg-red-500/15 text-red-300 rounded-full">{k}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 const STAGES = ["RESEARCH", "PLANNING", "WRITING", "THUMBNAIL", "EDITING", "PUBLISHING", "ANALYSIS"] as const;
 type Stage = (typeof STAGES)[number];
 
@@ -533,6 +594,7 @@ export function ProjectClient({ projectId, userId }: { projectId: string; userId
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState<string | null>(null);
   const [viewStage, setViewStage] = useState<Stage | null>(null);
+  const [ytIntel, setYtIntel] = useState<YTIntel | null>(null);
 
   const fetchProject = useCallback(async () => {
     const res = await fetch(`/api/projects/${projectId}`);
@@ -540,7 +602,16 @@ export function ProjectClient({ projectId, userId }: { projectId: string; userId
     setProject(data.project);
     setViewStage(data.project?.stage ?? "RESEARCH");
     setLoading(false);
-  }, [projectId]);
+
+    // Fetch YouTube intelligence in background
+    if (data.project) {
+      const topic = data.project.videoTopic || data.project.title;
+      fetch(`/api/youtube/niche?userId=${userId}&topic=${encodeURIComponent(topic)}`)
+        .then(r => r.json())
+        .then(d => { if (d.intel) setYtIntel(d.intel); })
+        .catch(() => {});
+    }
+  }, [projectId, userId]);
 
   useEffect(() => { fetchProject(); }, [fetchProject]);
 
@@ -671,6 +742,7 @@ export function ProjectClient({ projectId, userId }: { projectId: string; userId
 
       {/* Stage content */}
       <div className="max-w-5xl mx-auto px-6 py-8">
+        {ytIntel && <YouTubeIntelPanel intel={ytIntel} />}
         <AnimatePresence mode="wait">
           <motion.div
             key={viewStage}
