@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth/edge-config";
 import { NextResponse } from "next/server";
 
-const PROTECTED = ["/dashboard", "/onboarding", "/blueprint", "/seo", "/studio", "/projects", "/analytics"];
+const PROTECTED = ["/dashboard", "/onboarding", "/blueprint", "/seo", "/studio", "/projects", "/trends", "/analytics"];
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;

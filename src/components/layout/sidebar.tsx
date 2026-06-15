@@ -10,6 +10,7 @@ const NAV = [
   { href: "/seo", icon: "🔍", label: "SEO Center" },
   { href: "/studio", icon: "✍️", label: "Content Studio" },
   { href: "/projects", icon: "📋", label: "Projects" },
+  { href: "/trends", icon: "🔥", label: "Trend Finder" },
   { href: "/analytics", icon: "📊", label: "Analytics" },
 ];
 
