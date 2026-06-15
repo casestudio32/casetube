@@ -78,7 +78,7 @@ export function MonetizationCTA() {
               viewport={{ once: true }}
               transition={{ delay: 0.45, duration: 0.5 }}
               className="absolute rounded-2xl px-4 py-3.5"
-              style={{ top: "10%", left: "0px", minWidth: "185px", ...glassCard }}
+              style={{ top: "12%", left: "60px", minWidth: "185px", ...glassCard }}
             >
               <div className="flex items-center gap-2 mb-2">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
