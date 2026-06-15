@@ -358,12 +358,27 @@ function KeywordExplorer({ userId }: { userId: string }) {
             <button
               onClick={() => {
                 const rows = kwTab === "related" ? relatedRows : kwTab === "matching" ? matchingRows : questionRows;
-                copy(rows.map((r) => r.keyword).join("\n"), "export");
+                const tabLabel = kwTab === "related" ? "Related Keywords" : kwTab === "matching" ? "Matching Terms" : "Questions";
+                const headers = kwTab === "related"
+                  ? ["Keyword", "Related Score", "Search Volume", "Competition", "Competition Score", "Overall", "Number of Words"]
+                  : ["Keyword", "Search Volume", "Competition", "Competition Score", "Overall", "Number of Words"];
+                const csvRows = rows.map((r) => kwTab === "related"
+                  ? [r.keyword, r.relatedScore ?? "", r.searchVolume ?? "", r.competition ?? "", r.competitionScore?.toFixed(1) ?? "", r.overall ?? "", r.wordCount ?? ""]
+                  : [r.keyword, r.searchVolume ?? "", r.competition ?? "", r.competitionScore?.toFixed(1) ?? "", r.overall ?? "", r.wordCount ?? ""]
+                );
+                const csv = [headers, ...csvRows].map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+                const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `casetube-${tabLabel.toLowerCase().replace(" ", "-")}-${topic.replace(/\s+/g, "-")}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
               }}
               className="text-xs text-zinc-400 hover:text-white flex items-center gap-1.5 mb-2 bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 rounded-lg transition-all"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              {copied === "export" ? "Copied!" : "Export"}
+              Export CSV
             </button>
           </div>
 
