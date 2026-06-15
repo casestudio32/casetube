@@ -23,6 +23,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       allowDangerousEmailAccountLinking: true,
+      authorization: {
+        params: {
+          scope: "openid email profile https://www.googleapis.com/auth/youtube.readonly",
+          access_type: "offline",
+          prompt: "consent",
+        },
+      },
     }),
     Credentials({
       name: "credentials",
@@ -52,12 +59,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) token.id = user.id;
+      if (account?.access_token) token.accessToken = account.access_token;
+      if (account?.refresh_token) token.refreshToken = account.refresh_token;
       return token;
     },
     async session({ session, token }) {
       if (token.id) session.user.id = token.id as string;
+      if (token.accessToken) session.user.accessToken = token.accessToken as string;
       return session;
     },
   },
