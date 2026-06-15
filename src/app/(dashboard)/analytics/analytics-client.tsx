@@ -1,13 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import type { ReactNode } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
 const STAGES = ["RESEARCH", "PLANNING", "WRITING", "THUMBNAIL", "EDITING", "PUBLISHING", "ANALYSIS"];
-const STAGE_ICONS: Record<string, string> = {
-  RESEARCH: "🔍", PLANNING: "📋", WRITING: "✍️",
-  THUMBNAIL: "🖼️", EDITING: "✂️", PUBLISHING: "🚀", ANALYSIS: "📊",
+const STAGE_ICONS: Record<string, ReactNode> = {
+  RESEARCH: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>,
+  PLANNING: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>,
+  WRITING: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>,
+  THUMBNAIL: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="8.5" cy="10.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
+  EDITING: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><polyline points="8 6 6 6 6 8"/><polyline points="16 18 18 18 18 16"/></svg>,
+  PUBLISHING: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
+  ANALYSIS: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
 };
 const STAGE_COLORS: Record<string, string> = {
   RESEARCH: "bg-blue-500", PLANNING: "bg-purple-500", WRITING: "bg-yellow-500",
@@ -45,7 +51,7 @@ type AnalyticsData = {
   recentProjects: RecentProject[];
 };
 
-function StatCard({ label, value, sub, icon, delay = 0 }: { label: string; value: string | number; sub?: string; icon: string; delay?: number }) {
+function StatCard({ label, value, sub, icon, delay = 0 }: { label: string; value: string | number; sub?: string; icon: ReactNode; delay?: number }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -54,7 +60,7 @@ function StatCard({ label, value, sub, icon, delay = 0 }: { label: string; value
       className="bg-gray-900/60 border border-white/8 rounded-2xl p-5"
     >
       <div className="flex items-center justify-between mb-3">
-        <span className="text-2xl">{icon}</span>
+        <span className="text-zinc-400">{icon}</span>
         {sub && <span className="text-xs text-gray-500">{sub}</span>}
       </div>
       <p className="text-3xl font-bold text-white mb-1">{value}</p>
@@ -62,6 +68,13 @@ function StatCard({ label, value, sub, icon, delay = 0 }: { label: string; value
     </motion.div>
   );
 }
+
+const AnaIcons = {
+  projects: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>,
+  sections: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+  publish: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
+  regens: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>,
+};
 
 export function AnalyticsClient({ userId }: { userId: string }) {
   const [data, setData] = useState<AnalyticsData | null>(null);
@@ -108,10 +121,10 @@ export function AnalyticsClient({ userId }: { userId: string }) {
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard icon="🎬" label="Total Projects" value={stats.totalProjects} delay={0} />
-        <StatCard icon="✨" label="AI Sections Generated" value={stats.totalSections} sub="across all projects" delay={0.08} />
-        <StatCard icon="🚀" label="Ready to Publish" value={stats.published} sub="in Publishing or Analysis" delay={0.16} />
-        <StatCard icon="🔄" label="Regenerations" value={stats.regens} sub="times you refined AI output" delay={0.24} />
+        <StatCard icon={AnaIcons.projects} label="Total Projects" value={stats.totalProjects} delay={0} />
+        <StatCard icon={AnaIcons.sections} label="AI Sections Generated" value={stats.totalSections} sub="across all projects" delay={0.08} />
+        <StatCard icon={AnaIcons.publish} label="Ready to Publish" value={stats.published} sub="in Publishing or Analysis" delay={0.16} />
+        <StatCard icon={AnaIcons.regens} label="Regenerations" value={stats.regens} sub="times you refined AI output" delay={0.24} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
