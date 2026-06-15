@@ -1,18 +1,19 @@
 import { NextResponse } from "next/server";
 import { generateAI } from "@/lib/ai/provider";
 import { db } from "@/lib/db/client";
+import { getNicheIntelligence, formatNicheContext } from "@/lib/youtube/client";
 
 export async function POST(req: Request) {
   try {
     const { title, keyPoints, duration, userId } = await req.json();
 
-    const memory = userId
-      ? await db.creatorMemory.findUnique({ where: { userId } })
-      : null;
-
+    const memory = userId ? await db.creatorMemory.findUnique({ where: { userId } }) : null;
     const context = memory
       ? `Brand voice: ${memory.brandVoice}. Audience: ${memory.targetAudience}. Niche: ${memory.niche}.`
       : "";
+
+    const intel = await getNicheIntelligence(memory?.niche || title, title);
+    const youtubeContext = intel ? formatNicheContext(intel) : "";
 
     const prompt = `You are a professional YouTube scriptwriter. Write a complete, engaging video script.
 
@@ -20,6 +21,10 @@ Video title: "${title}"
 ${keyPoints ? `Key points to cover: ${keyPoints}` : ""}
 Target duration: ${duration || "8-10"} minutes
 ${context}
+
+${youtubeContext}
+
+Study the top-performing videos in this niche above. Your script must be informed by what makes those videos successful — their pacing, structure, the way they hold attention, the language they use. This script should feel like it belongs in the same tier as those top videos.
 
 Return ONLY valid JSON:
 {
@@ -36,9 +41,9 @@ Return ONLY valid JSON:
     ],
     "cta": "The mid-video call to action (subscribe, like, comment prompt)",
     "outro": "The closing 30-60 seconds — recap, final thought, subscribe ask, next video tease",
-    "chapters": ["0:00 Introduction", "0:45 Section title", "..."],
+    "chapters": ["0:00 Introduction", "0:45 Section title"],
     "totalWordCount": 1200,
-    "speakingNotes": "3-4 delivery tips specific to this script"
+    "speakingNotes": "3-4 delivery tips specific to this script and niche"
   }
 }
 
@@ -55,7 +60,7 @@ Write 4-6 sections. Make the script conversational, not robotic. Include specifi
     if (!jsonMatch) throw new Error("Invalid AI response");
     const data = JSON.parse(jsonMatch[0]);
 
-    return NextResponse.json({ data });
+    return NextResponse.json({ data, youtubeIntel: intel ? { avgViews: intel.avgViews, topTitles: intel.topTitles.slice(0, 5), videoCount: intel.topVideos.length } : null });
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: msg }, { status: 500 });

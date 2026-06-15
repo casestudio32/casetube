@@ -1,24 +1,27 @@
 import { NextResponse } from "next/server";
 import { generateAI } from "@/lib/ai/provider";
 import { db } from "@/lib/db/client";
+import { getNicheIntelligence, formatNicheContext } from "@/lib/youtube/client";
 
 export async function POST(req: Request) {
   try {
     const { title, summary, userId } = await req.json();
 
-    const memory = userId
-      ? await db.creatorMemory.findUnique({ where: { userId } })
-      : null;
+    const memory = userId ? await db.creatorMemory.findUnique({ where: { userId } }) : null;
+    const context = memory ? `Brand voice: ${memory.brandVoice}. Niche: ${memory.niche}.` : "";
 
-    const context = memory
-      ? `Brand voice: ${memory.brandVoice}. Niche: ${memory.niche}.`
-      : "";
+    const intel = await getNicheIntelligence(memory?.niche || title, title);
+    const youtubeContext = intel ? formatNicheContext(intel) : "";
 
     const prompt = `You are a content repurposing expert. Take this YouTube video and repurpose it across platforms.
 
 Video title: "${title}"
 ${summary ? `Summary: ${summary}` : ""}
 ${context}
+
+${youtubeContext}
+
+Use the real niche data above to inform the language, hooks, and keywords used across all repurposed content. The shorts hooks and social posts should reference what's working in this niche.
 
 Return ONLY valid JSON:
 {
@@ -58,7 +61,7 @@ Generate 3 Shorts ideas and 4 X posts. Return only JSON.`;
     if (!jsonMatch) throw new Error("Invalid AI response");
     const data = JSON.parse(jsonMatch[0]);
 
-    return NextResponse.json({ data });
+    return NextResponse.json({ data, youtubeIntel: intel ? { avgViews: intel.avgViews, topTitles: intel.topTitles.slice(0, 3), videoCount: intel.topVideos.length } : null });
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: msg }, { status: 500 });
