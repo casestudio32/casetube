@@ -33,7 +33,7 @@ export function MonetizationCTA() {
           </p>
           <Link
             href="/signup"
-            className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white font-bold text-base px-8 py-4 rounded-full transition-colors"
+            className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white font-bold text-sm px-6 py-3 rounded-lg transition-colors"
           >
             Get Started Free
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -78,7 +78,7 @@ export function MonetizationCTA() {
               viewport={{ once: true }}
               transition={{ delay: 0.45, duration: 0.5 }}
               className="absolute rounded-2xl px-4 py-3.5"
-              style={{ top: "10%", left: "0px", minWidth: "185px", ...glassCard }}
+              style={{ top: "30%", left: "0px", minWidth: "185px", ...glassCard }}
             >
               <div className="flex items-center gap-2 mb-2">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
