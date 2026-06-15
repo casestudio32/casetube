@@ -53,15 +53,29 @@ export function MonetizationCTA() {
           {/* Wider container so cards can bleed without overlapping the text */}
           <div className="relative h-[540px]" style={{ width: "580px" }}>
 
+            {/* Red glow behind person */}
+            <div
+              className="absolute inset-0 flex justify-center items-center pointer-events-none"
+              style={{ zIndex: 0 }}
+            >
+              <div style={{
+                width: "340px",
+                height: "340px",
+                background: "radial-gradient(circle, rgba(220,38,38,0.18) 0%, transparent 70%)",
+                borderRadius: "50%",
+                marginTop: "80px",
+              }} />
+            </div>
+
             {/* Person image — centered horizontally within the wider container */}
-            <div className="absolute inset-0 flex justify-center">
-              <div className="relative w-[380px] h-full">
+            <div className="absolute inset-0 flex justify-center" style={{ zIndex: 1 }}>
+              <div className="relative w-[430px] h-full">
                 <Image
                   src="/Images/Man.png"
                   alt="Creator using CaseTube"
                   fill
                   className="object-contain object-bottom"
-                  sizes="380px"
+                  sizes="430px"
                 />
                 {/* Bottom fade */}
                 <div
