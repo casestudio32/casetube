@@ -113,7 +113,14 @@ function ScoreChip({ score }: { score?: number }) {
 function CompBadge({ comp }: { comp?: string }) {
   if (!comp) return <span className="text-zinc-500 text-xs">—</span>;
   const lower = comp.toLowerCase();
-  const color = lower.includes("very low") ? "text-green-400" : lower === "low" ? "text-green-300" : lower === "medium" ? "text-yellow-400" : "text-red-400";
+  const color =
+    lower.includes("very low") || lower === "easy"
+      ? "text-green-400"
+      : lower === "low"
+      ? "text-green-300"
+      : lower === "medium"
+      ? "text-yellow-400"
+      : "text-red-400";
   return <span className={`text-xs font-medium ${color}`}>{comp}</span>;
 }
 

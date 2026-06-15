@@ -47,12 +47,12 @@ Return ONLY valid JSON:
   "competitorTip": "One specific, actionable insight from studying the top videos above"
 }
 
-Generate 8 keywords, 6 long-tail, 5 questions, 4 angles. Every item must be grounded in the real YouTube data above — no generic advice. Return only JSON.`;
+Generate 20 keywords, 15 long-tail, 12 questions, 6 angles. Every item must be grounded in the real YouTube data above — no generic advice. Return only JSON.`;
 
     const response = await generateAI({
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
-      maxTokens: 2000,
+      maxTokens: 4000,
     });
 
     const jsonMatch = response.content.match(/\{[\s\S]*\}/);
