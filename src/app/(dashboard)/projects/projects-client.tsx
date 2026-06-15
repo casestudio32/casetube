@@ -43,7 +43,6 @@ export function ProjectsClient({ userId }: { userId: string }) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
-  const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ title: "", description: "", videoTopic: "" });
   const [activeFilter, setActiveFilter] = useState<Stage | "ALL">("ALL");
 
@@ -58,19 +57,34 @@ export function ProjectsClient({ userId }: { userId: string }) {
 
   const createProject = async () => {
     if (!form.title.trim()) return;
-    setCreating(true);
+
+    // Optimistic — close modal and show card immediately
+    const tempId = `temp-${Date.now()}`;
+    const optimistic: Project = {
+      id: tempId,
+      title: form.title,
+      description: form.description || null,
+      videoTopic: form.videoTopic || null,
+      stage: "RESEARCH",
+      status: "ACTIVE",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      _count: { sections: 0 },
+    };
+    setProjects(prev => [optimistic, ...prev]);
+    setForm({ title: "", description: "", videoTopic: "" });
+    setShowCreate(false);
+
+    // Fire API in background, replace optimistic card with real one
     const res = await fetch("/api/projects/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, userId }),
+      body: JSON.stringify({ title: optimistic.title, description: optimistic.description, videoTopic: optimistic.videoTopic, userId }),
     });
     const data = await res.json();
     if (data.project) {
-      setProjects(prev => [{ ...data.project, _count: { sections: 0 } }, ...prev]);
-      setForm({ title: "", description: "", videoTopic: "" });
-      setShowCreate(false);
+      setProjects(prev => prev.map(p => p.id === tempId ? { ...data.project, _count: { sections: 0 } } : p));
     }
-    setCreating(false);
   };
 
   const filtered = activeFilter === "ALL" ? projects : projects.filter(p => p.stage === activeFilter);
@@ -169,8 +183,8 @@ export function ProjectsClient({ userId }: { userId: string }) {
               </div>
               <div className="flex gap-3 mt-5">
                 <button onClick={() => setShowCreate(false)} className="btn-secondary flex-1">Cancel</button>
-                <button onClick={createProject} disabled={creating || !form.title.trim()} className="btn-primary flex-1 disabled:opacity-50">
-                  {creating ? "Creating..." : "Create Project"}
+                <button onClick={createProject} disabled={!form.title.trim()} className="btn-primary flex-1 disabled:opacity-50">
+                  Create Project
                 </button>
               </div>
             </motion.div>
