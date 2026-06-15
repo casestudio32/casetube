@@ -1,24 +1,25 @@
 "use client";
 
 import { useState } from "react";
+import React from "react";
 
 type Tab = "ideas" | "hooks" | "script" | "repurpose";
 
 export function StudioClient({ userId }: { userId: string }) {
   const [tab, setTab] = useState<Tab>("ideas");
 
-  const tabs: { id: Tab; label: string }[] = [
-    { id: "ideas", label: "💡 Ideas" },
-    { id: "hooks", label: "🎣 Hooks" },
-    { id: "script", label: "📜 Script" },
-    { id: "repurpose", label: "♻️ Repurpose" },
+  const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
+    { id: "ideas", label: "Ideas", icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> },
+    { id: "hooks", label: "Hooks", icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/></svg> },
+    { id: "script", label: "Script", icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> },
+    { id: "repurpose", label: "Repurpose", icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg> },
   ];
 
   return (
     <div className="px-8 py-8 max-w-5xl">
       <div className="mb-8">
         <div className="inline-flex items-center gap-2 bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-semibold px-3 py-1.5 rounded-full mb-3">
-          ✍️ Content Studio
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> Content Studio
         </div>
         <h1 className="text-3xl font-bold text-white">Content Studio</h1>
         <p className="text-zinc-400 mt-1">Generate ideas, hooks, scripts, and repurposed content with AI.</p>
@@ -34,7 +35,7 @@ export function StudioClient({ userId }: { userId: string }) {
               tab === t.id ? "bg-zinc-700 text-white" : "text-zinc-500 hover:text-zinc-300"
             }`}
           >
-            {t.label}
+            <span className="flex items-center gap-2">{t.icon}{t.label}</span>
           </button>
         ))}
       </div>
@@ -453,7 +454,7 @@ function RepurposeTab({ userId }: { userId: string }) {
         <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Video title" className="input-field" />
         <textarea value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="Brief summary of your video (optional — helps the AI write better content)" rows={3} className="input-field resize-none" />
         <button onClick={generate} disabled={loading || !title.trim()} className="btn-primary disabled:opacity-40 disabled:cursor-not-allowed">
-          {loading ? <Spinner text="Repurposing..." /> : "♻️ Repurpose This Video →"}
+          {loading ? <Spinner text="Repurposing..." /> : "Repurpose This Video →"}
         </button>
       </div>
 

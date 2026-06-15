@@ -36,7 +36,7 @@ export function SEOClient({ userId }: { userId: string }) {
       {/* Header */}
       <div className="mb-8">
         <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold px-3 py-1.5 rounded-full mb-3">
-          🔍 SEO Center
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg> SEO Center
         </div>
         <h1 className="text-3xl font-bold text-white">SEO Research Center</h1>
         <p className="text-zinc-400 mt-1">
@@ -54,7 +54,13 @@ export function SEOClient({ userId }: { userId: string }) {
               tab === t ? "bg-zinc-700 text-white" : "text-zinc-500 hover:text-zinc-300"
             }`}
           >
-            {t === "keywords" ? "🔍 Keyword Explorer" : t === "titles" ? "✏️ Title Generator" : "📝 Description"}
+            {t === "keywords" ? (
+              <span className="flex items-center gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>Keyword Explorer</span>
+            ) : t === "titles" ? (
+              <span className="flex items-center gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Title Generator</span>
+            ) : (
+              <span className="flex items-center gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>Description</span>
+            )}
           </button>
         ))}
       </div>
@@ -230,7 +236,7 @@ function KeywordExplorer({ userId }: { userId: string }) {
               </ul>
             </div>
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-              <h3 className="text-white font-semibold mb-4">💡 Content Angles</h3>
+              <h3 className="text-white font-semibold mb-4 flex items-center gap-2"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Content Angles</h3>
               <div className="space-y-3">
                 {data.contentAngles.map((ca, i) => (
                   <div key={i} className="border border-zinc-800 rounded-lg p-3">
@@ -340,7 +346,7 @@ function TitleGenerator({ userId }: { userId: string }) {
 
           {data.tips?.length > 0 && (
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 mt-2">
-              <h3 className="text-white font-semibold mb-3">💡 Title Tips</h3>
+              <h3 className="text-white font-semibold mb-3 flex items-center gap-2"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Title Tips</h3>
               <ul className="space-y-2">
                 {data.tips.map((tip, i) => (
                   <li key={i} className="flex items-start gap-2 text-zinc-300 text-sm">
@@ -421,7 +427,7 @@ function DescriptionGenerator({ userId }: { userId: string }) {
         <div className="space-y-6">
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
-              <h3 className="text-white font-semibold">📝 Video Description</h3>
+              <h3 className="text-white font-semibold flex items-center gap-2"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Video Description</h3>
               <button
                 onClick={() => copy(data.description, "desc")}
                 className="text-xs text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 rounded-lg transition-all"

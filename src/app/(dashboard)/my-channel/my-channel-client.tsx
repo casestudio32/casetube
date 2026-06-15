@@ -154,13 +154,13 @@ export function MyChannelClient({ hasOAuth }: { hasOAuth: boolean }) {
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: "Subscribers", value: fmt(data.channel.subscriberCount), icon: "👥" },
-              { label: "Total Videos", value: fmt(data.channel.videoCount), icon: "🎬" },
-              { label: "Total Views", value: fmt(data.channel.viewCount), icon: "👁️" },
-              { label: "Avg Views/Video", value: data.insights.avgViewsFormatted, icon: "📈" },
+              { label: "Subscribers", value: fmt(data.channel.subscriberCount), icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg> },
+              { label: "Total Videos", value: fmt(data.channel.videoCount), icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> },
+              { label: "Total Views", value: fmt(data.channel.viewCount), icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> },
+              { label: "Avg Views/Video", value: data.insights.avgViewsFormatted, icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg> },
             ].map((stat, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }} className="bg-gray-900/60 border border-white/8 rounded-2xl p-4 text-center">
-                <div className="text-2xl mb-1">{stat.icon}</div>
+                <div className="text-zinc-400 flex justify-center mb-2">{stat.icon}</div>
                 <p className="text-2xl font-bold text-white">{stat.value}</p>
                 <p className="text-xs text-gray-400">{stat.label}</p>
               </motion.div>
