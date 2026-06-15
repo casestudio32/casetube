@@ -13,6 +13,11 @@ const Icons = {
       <rect x="14" y="14" width="7" height="7" rx="1" />
     </svg>
   ),
+  feed: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 11a9 9 0 019 9"/><path d="M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="1"/>
+    </svg>
+  ),
   blueprint: (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M9 11l3 3L22 4" />
@@ -87,6 +92,7 @@ const Icons = {
 
 const NAV = [
   { href: "/dashboard", icon: Icons.dashboard, label: "Dashboard" },
+  { href: "/feed", icon: Icons.feed, label: "Feed" },
   { href: "/blueprint", icon: Icons.blueprint, label: "My Blueprint" },
   { href: "/seo", icon: Icons.seo, label: "SEO Center" },
   { href: "/studio", icon: Icons.studio, label: "Content Studio" },
