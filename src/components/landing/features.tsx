@@ -230,7 +230,7 @@ const FEATURES = [
 
 export function Features() {
   return (
-    <section id="features" className="py-24 px-6">
+    <section id="features" className="pt-32 pb-24 px-6">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <motion.div
