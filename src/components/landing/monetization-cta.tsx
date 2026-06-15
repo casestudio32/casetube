@@ -51,7 +51,7 @@ export function MonetizationCTA() {
           className="flex-1 flex justify-center"
         >
           {/* Wider container so cards can bleed without overlapping the text */}
-          <div className="relative h-[540px]" style={{ width: "580px" }}>
+          <div className="relative h-[540px]" style={{ width: "580px", overflow: "visible" }}>
 
             {/* Red glow behind person */}
             <div
@@ -92,7 +92,7 @@ export function MonetizationCTA() {
               viewport={{ once: true }}
               transition={{ delay: 0.45, duration: 0.5 }}
               className="absolute rounded-2xl px-4 py-3.5"
-              style={{ top: "30%", left: "0px", minWidth: "185px", ...glassCard }}
+              style={{ top: "30%", left: "0px", minWidth: "185px", zIndex: 20, ...glassCard }}
             >
               <div className="flex items-center gap-2 mb-2">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -115,7 +115,7 @@ export function MonetizationCTA() {
               viewport={{ once: true }}
               transition={{ delay: 0.6, duration: 0.5 }}
               className="absolute rounded-2xl px-4 py-3.5"
-              style={{ bottom: "26%", right: "0px", minWidth: "185px", ...glassCard }}
+              style={{ bottom: "26%", right: "0px", minWidth: "185px", zIndex: 20, ...glassCard }}
             >
               <div className="flex items-center gap-2 mb-2">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
