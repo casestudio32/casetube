@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -59,11 +59,14 @@ export function ProjectsClient({ userId }: { userId: string }) {
 
   useEffect(() => { fetchProjects(); }, []);
 
-  // Close menu on outside click
+  // Close menu on outside click (mousedown fires before click, avoids race)
   useEffect(() => {
-    const handler = () => setOpenMenu(null);
-    document.addEventListener("click", handler);
-    return () => document.removeEventListener("click", handler);
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-menu]")) setOpenMenu(null);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   const createProject = async () => {
@@ -218,15 +221,15 @@ export function ProjectsClient({ userId }: { userId: string }) {
           {filtered.map(project => (
             <motion.div key={project.id} layout initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="relative group">
               {/* 3-dot menu */}
-              <div className="absolute top-3 right-3 z-10" onClick={e => e.preventDefault()}>
+              <div data-menu className="absolute top-3 right-3 z-10">
                 <button
-                  onClick={e => { e.stopPropagation(); setOpenMenu(openMenu === project.id ? null : project.id); }}
-                  className="w-7 h-7 flex items-center justify-center rounded-lg bg-zinc-800/0 hover:bg-zinc-700 text-gray-500 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                  onMouseDown={e => { e.stopPropagation(); e.preventDefault(); setOpenMenu(openMenu === project.id ? null : project.id); }}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-zinc-700 text-gray-500 hover:text-white transition-all opacity-0 group-hover:opacity-100"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
                 </button>
                 {openMenu === project.id && (
-                  <div className="absolute right-0 top-8 bg-zinc-900 border border-zinc-700 rounded-xl shadow-xl py-1 w-40 z-20">
+                  <div data-menu className="absolute right-0 top-8 bg-zinc-900 border border-zinc-700 rounded-xl shadow-xl py-1 w-40 z-20">
                     <Link href={`/projects/${project.id}`} className="flex items-center gap-2 px-3 py-2 text-sm text-white hover:bg-zinc-800 transition-colors">
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                       Open
