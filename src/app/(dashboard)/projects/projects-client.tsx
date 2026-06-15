@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 
@@ -17,14 +17,14 @@ const STAGE_COLORS: Record<Stage, string> = {
   ANALYSIS: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
 };
 
-const STAGE_ICONS: Record<Stage, string> = {
-  RESEARCH: "🔍",
-  PLANNING: "📋",
-  WRITING: "✍️",
-  THUMBNAIL: "🖼️",
-  EDITING: "✂️",
-  PUBLISHING: "🚀",
-  ANALYSIS: "📊",
+const STAGE_ICONS: Record<Stage, JSX.Element> = {
+  RESEARCH: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>,
+  PLANNING: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>,
+  WRITING: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>,
+  THUMBNAIL: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="8.5" cy="10.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
+  EDITING: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><polyline points="8 6 6 6 6 8"/><polyline points="16 18 18 18 18 16"/></svg>,
+  PUBLISHING: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
+  ANALYSIS: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
 };
 
 type Project = {
@@ -45,6 +45,9 @@ export function ProjectsClient({ userId }: { userId: string }) {
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ title: "", description: "", videoTopic: "" });
   const [activeFilter, setActiveFilter] = useState<Stage | "ALL">("ALL");
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
 
   const fetchProjects = async () => {
     const res = await fetch(`/api/projects/list?userId=${userId}`);
@@ -55,27 +58,25 @@ export function ProjectsClient({ userId }: { userId: string }) {
 
   useEffect(() => { fetchProjects(); }, []);
 
+  // Close menu on outside click
+  useEffect(() => {
+    const handler = () => setOpenMenu(null);
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  }, []);
+
   const createProject = async () => {
     if (!form.title.trim()) return;
-
-    // Optimistic — close modal and show card immediately
     const tempId = `temp-${Date.now()}`;
     const optimistic: Project = {
-      id: tempId,
-      title: form.title,
-      description: form.description || null,
-      videoTopic: form.videoTopic || null,
-      stage: "RESEARCH",
-      status: "ACTIVE",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      id: tempId, title: form.title, description: form.description || null,
+      videoTopic: form.videoTopic || null, stage: "RESEARCH", status: "ACTIVE",
+      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
       _count: { sections: 0 },
     };
     setProjects(prev => [optimistic, ...prev]);
     setForm({ title: "", description: "", videoTopic: "" });
     setShowCreate(false);
-
-    // Fire API in background, replace optimistic card with real one
     const res = await fetch("/api/projects/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -87,12 +88,16 @@ export function ProjectsClient({ userId }: { userId: string }) {
     }
   };
 
-  const filtered = activeFilter === "ALL" ? projects : projects.filter(p => p.stage === activeFilter);
+  const deleteProject = async (id: string) => {
+    setDeleting(id);
+    setProjects(prev => prev.filter(p => p.id !== id));
+    setDeleteConfirm(null);
+    await fetch(`/api/projects/${id}`, { method: "DELETE" });
+    setDeleting(null);
+  };
 
-  const stageCounts = STAGES.reduce((acc, s) => {
-    acc[s] = projects.filter(p => p.stage === s).length;
-    return acc;
-  }, {} as Record<Stage, number>);
+  const filtered = activeFilter === "ALL" ? projects : projects.filter(p => p.stage === activeFilter);
+  const stageCounts = STAGES.reduce((acc, s) => { acc[s] = projects.filter(p => p.stage === s).length; return acc; }, {} as Record<Stage, number>);
 
   return (
     <div className="min-h-screen bg-gray-950 p-6 md:p-8">
@@ -111,11 +116,7 @@ export function ProjectsClient({ userId }: { userId: string }) {
       <div className="flex gap-2 flex-wrap mb-6">
         <button
           onClick={() => setActiveFilter("ALL")}
-          className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-            activeFilter === "ALL"
-              ? "bg-indigo-600 text-white border-indigo-500"
-              : "bg-white/5 text-gray-400 border-white/10 hover:border-white/20"
-          }`}
+          className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${activeFilter === "ALL" ? "bg-indigo-600 text-white border-indigo-500" : "bg-white/5 text-gray-400 border-white/10 hover:border-white/20"}`}
         >
           All ({projects.length})
         </button>
@@ -123,69 +124,74 @@ export function ProjectsClient({ userId }: { userId: string }) {
           <button
             key={stage}
             onClick={() => setActiveFilter(stage)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-              activeFilter === stage
-                ? "bg-indigo-600 text-white border-indigo-500"
-                : "bg-white/5 text-gray-400 border-white/10 hover:border-white/20"
-            }`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${activeFilter === stage ? "bg-indigo-600 text-white border-indigo-500" : "bg-white/5 text-gray-400 border-white/10 hover:border-white/20"}`}
           >
             {STAGE_ICONS[stage]} {stage.charAt(0) + stage.slice(1).toLowerCase()} ({stageCounts[stage]})
           </button>
         ))}
       </div>
 
+      {/* Delete confirm modal */}
+      <AnimatePresence>
+        {deleteConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-gray-900 border border-white/10 rounded-2xl p-6 w-full max-w-sm text-center"
+            >
+              <div className="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+              </div>
+              <h3 className="text-white font-semibold text-lg mb-2">Delete Project?</h3>
+              <p className="text-gray-400 text-sm mb-6">This will permanently delete the project and all its AI-generated content. This cannot be undone.</p>
+              <div className="flex gap-3">
+                <button onClick={() => setDeleteConfirm(null)} className="btn-secondary flex-1">Cancel</button>
+                <button
+                  onClick={() => deleteProject(deleteConfirm)}
+                  disabled={!!deleting}
+                  className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-all"
+                >
+                  {deleting ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Create modal */}
       <AnimatePresence>
         {showCreate && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
             onClick={e => { if (e.target === e.currentTarget) setShowCreate(false); }}
           >
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
               className="bg-gray-900 border border-white/10 rounded-2xl p-6 w-full max-w-md"
             >
               <h2 className="text-lg font-semibold text-white mb-4">New Video Project</h2>
               <div className="space-y-3">
                 <div>
                   <label className="text-xs text-gray-400 mb-1 block">Video Title *</label>
-                  <input
-                    className="input-field w-full"
-                    placeholder="e.g. How to Start a YouTube Channel in 2025"
-                    value={form.title}
-                    onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                  />
+                  <input className="input-field w-full" placeholder="e.g. How to Start a YouTube Channel in 2025" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
                 </div>
                 <div>
                   <label className="text-xs text-gray-400 mb-1 block">Topic / Angle</label>
-                  <input
-                    className="input-field w-full"
-                    placeholder="e.g. beginner guide for people with no gear"
-                    value={form.videoTopic}
-                    onChange={e => setForm(f => ({ ...f, videoTopic: e.target.value }))}
-                  />
+                  <input className="input-field w-full" placeholder="e.g. beginner guide for people with no gear" value={form.videoTopic} onChange={e => setForm(f => ({ ...f, videoTopic: e.target.value }))} />
                 </div>
                 <div>
                   <label className="text-xs text-gray-400 mb-1 block">Notes (optional)</label>
-                  <textarea
-                    className="input-field w-full resize-none"
-                    rows={3}
-                    placeholder="Any extra context, deadlines, ideas..."
-                    value={form.description}
-                    onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                  />
+                  <textarea className="input-field w-full resize-none" rows={3} placeholder="Any extra context, deadlines, ideas..." value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
                 </div>
               </div>
               <div className="flex gap-3 mt-5">
                 <button onClick={() => setShowCreate(false)} className="btn-secondary flex-1">Cancel</button>
-                <button onClick={createProject} disabled={!form.title.trim()} className="btn-primary flex-1 disabled:opacity-50">
-                  Create Project
-                </button>
+                <button onClick={createProject} disabled={!form.title.trim()} className="btn-primary flex-1 disabled:opacity-50">Create Project</button>
               </div>
             </motion.div>
           </motion.div>
@@ -195,69 +201,65 @@ export function ProjectsClient({ userId }: { userId: string }) {
       {/* Content */}
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="bg-gray-900/50 border border-white/5 rounded-2xl p-5 animate-pulse h-44" />
-          ))}
+          {[1, 2, 3].map(i => <div key={i} className="bg-gray-900/50 border border-white/5 rounded-2xl p-5 animate-pulse h-44" />)}
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-20">
-          <div className="text-5xl mb-4">🎬</div>
-          <h3 className="text-white font-semibold text-lg mb-2">
-            {activeFilter === "ALL" ? "No projects yet" : `No projects in ${activeFilter}`}
-          </h3>
+          <div className="text-zinc-600 flex justify-center mb-4">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          </div>
+          <h3 className="text-white font-semibold text-lg mb-2">{activeFilter === "ALL" ? "No projects yet" : `No projects in ${activeFilter}`}</h3>
           <p className="text-gray-500 text-sm mb-6">Every video starts as a project. Create one to begin.</p>
-          {activeFilter === "ALL" && (
-            <button onClick={() => setShowCreate(true)} className="btn-primary">
-              + Create your first project
-            </button>
-          )}
+          {activeFilter === "ALL" && <button onClick={() => setShowCreate(true)} className="btn-primary">+ Create your first project</button>}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map(project => (
-            <motion.div
-              key={project.id}
-              layout
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <Link href={`/projects/${project.id}`} className="block group">
+            <motion.div key={project.id} layout initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="relative group">
+              {/* 3-dot menu */}
+              <div className="absolute top-3 right-3 z-10" onClick={e => e.preventDefault()}>
+                <button
+                  onClick={e => { e.stopPropagation(); setOpenMenu(openMenu === project.id ? null : project.id); }}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg bg-zinc-800/0 hover:bg-zinc-700 text-gray-500 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+                </button>
+                {openMenu === project.id && (
+                  <div className="absolute right-0 top-8 bg-zinc-900 border border-zinc-700 rounded-xl shadow-xl py-1 w-40 z-20">
+                    <Link href={`/projects/${project.id}`} className="flex items-center gap-2 px-3 py-2 text-sm text-white hover:bg-zinc-800 transition-colors">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      Open
+                    </Link>
+                    <button
+                      onClick={() => { setDeleteConfirm(project.id); setOpenMenu(null); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <Link href={`/projects/${project.id}`} className="block">
                 <div className="bg-gray-900/60 border border-white/8 rounded-2xl p-5 hover:border-indigo-500/40 hover:bg-gray-900/80 transition-all duration-200 h-full">
-                  {/* Stage badge */}
                   <div className="flex items-center justify-between mb-3">
-                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${STAGE_COLORS[project.stage]}`}>
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${STAGE_COLORS[project.stage]}`}>
                       {STAGE_ICONS[project.stage]} {project.stage.charAt(0) + project.stage.slice(1).toLowerCase()}
                     </span>
                     <span className="text-xs text-gray-600">{project._count.sections} sections</span>
                   </div>
-
-                  {/* Title */}
-                  <h3 className="text-white font-semibold text-sm leading-snug mb-1 group-hover:text-indigo-300 transition-colors line-clamp-2">
+                  <h3 className="text-white font-semibold text-sm leading-snug mb-1 group-hover:text-indigo-300 transition-colors line-clamp-2 pr-6">
                     {project.title}
                   </h3>
-
-                  {project.videoTopic && (
-                    <p className="text-gray-500 text-xs mb-3 line-clamp-1">{project.videoTopic}</p>
-                  )}
-
-                  {/* Stage progress bar */}
+                  {project.videoTopic && <p className="text-gray-500 text-xs mb-3 line-clamp-1">{project.videoTopic}</p>}
                   <div className="mt-4">
                     <div className="flex gap-0.5">
-                      {STAGES.map((s, i) => {
-                        const stageIdx = STAGES.indexOf(project.stage);
-                        return (
-                          <div
-                            key={s}
-                            className={`h-1 flex-1 rounded-full transition-all ${
-                              i <= stageIdx ? "bg-indigo-500" : "bg-white/10"
-                            }`}
-                          />
-                        );
-                      })}
+                      {STAGES.map((s, i) => (
+                        <div key={s} className={`h-1 flex-1 rounded-full transition-all ${i <= STAGES.indexOf(project.stage) ? "bg-indigo-500" : "bg-white/10"}`} />
+                      ))}
                     </div>
-                    <p className="text-xs text-gray-600 mt-1.5">
-                      Stage {STAGES.indexOf(project.stage) + 1} of {STAGES.length}
-                    </p>
+                    <p className="text-xs text-gray-600 mt-1.5">Stage {STAGES.indexOf(project.stage) + 1} of {STAGES.length}</p>
                   </div>
                 </div>
               </Link>
