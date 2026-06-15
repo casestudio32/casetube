@@ -363,12 +363,32 @@ function SectionContent({ section }: { section: Section }) {
   return <pre className="text-xs text-gray-400 bg-white/5 rounded-xl p-3 overflow-auto">{JSON.stringify(c, null, 2)}</pre>;
 }
 
+const STAGE_SECTIONS: Record<string, string[]> = {
+  RESEARCH: ["IDEAS", "HOOK"],
+  PLANNING: ["TITLE", "SEO_PACKAGE"],
+  WRITING: ["SCRIPT", "DESCRIPTION"],
+  THUMBNAIL: ["THUMBNAIL"],
+  EDITING: [],
+  PUBLISHING: ["SHORTS", "COMMUNITY_POST"],
+  ANALYSIS: [],
+};
+
+const STAGE_TIPS: Record<string, string> = {
+  RESEARCH: "Start here — generate Video Ideas and Hooks to nail your concept.",
+  PLANNING: "Plan your SEO. Generate your Title and SEO Package before writing.",
+  WRITING: "Write your Full Script and Description now.",
+  THUMBNAIL: "Generate Thumbnail Concepts to brief your designer or create it yourself.",
+  EDITING: "Your video is in editing. Come back when it's ready to publish.",
+  PUBLISHING: "Almost live! Generate Shorts ideas and a Community Post to promote it.",
+  ANALYSIS: "Video is published. Track performance and plan your next one.",
+};
+
 export function ProjectClient({ projectId, userId }: { projectId: string; userId: string }) {
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<SectionType | null>(null);
-  const [updatingStage, setUpdatingStage] = useState(false);
+  const [stageFlash, setStageFlash] = useState(false);
 
   const fetchProject = useCallback(async () => {
     const res = await fetch(`/api/projects/${projectId}`);
@@ -406,14 +426,17 @@ export function ProjectClient({ projectId, userId }: { projectId: string; userId
     const idx = STAGES.indexOf(project.stage);
     if (idx >= STAGES.length - 1) return;
     const nextStage = STAGES[idx + 1];
-    setUpdatingStage(true);
-    await fetch(`/api/projects/${projectId}`, {
+    // Optimistic update — instant feedback
+    setProject(prev => prev ? { ...prev, stage: nextStage } : prev);
+    setStageFlash(true);
+    setActiveSection(null);
+    setTimeout(() => setStageFlash(false), 2500);
+    // Save to DB in background
+    fetch(`/api/projects/${projectId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ stage: nextStage }),
     });
-    setProject(prev => prev ? { ...prev, stage: nextStage } : prev);
-    setUpdatingStage(false);
   };
 
   if (loading) {
@@ -438,6 +461,7 @@ export function ProjectClient({ projectId, userId }: { projectId: string; userId
   const stageIdx = STAGES.indexOf(project.stage);
   const sectionsByType: Record<string, Section> = {};
   project.sections.forEach(s => { sectionsByType[s.type] = s; });
+  const stageSections = STAGE_SECTIONS[project.stage] || [];
 
   return (
     <div className="min-h-screen bg-gray-950">
@@ -457,8 +481,8 @@ export function ProjectClient({ projectId, userId }: { projectId: string; userId
               )}
             </div>
             {stageIdx < STAGES.length - 1 && (
-              <button onClick={advanceStage} disabled={updatingStage} className="btn-primary text-sm shrink-0 disabled:opacity-50">
-                {updatingStage ? "Updating..." : `Move to ${STAGES[stageIdx + 1].charAt(0) + STAGES[stageIdx + 1].slice(1).toLowerCase()} →`}
+              <button onClick={advanceStage} className="btn-primary text-sm shrink-0">
+                Move to {STAGES[stageIdx + 1].charAt(0) + STAGES[stageIdx + 1].slice(1).toLowerCase()} →
               </button>
             )}
           </div>
@@ -486,7 +510,32 @@ export function ProjectClient({ projectId, userId }: { projectId: string; userId
         </div>
       </div>
 
+      {/* Stage flash banner */}
+      <AnimatePresence>
+        {stageFlash && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="bg-green-500/15 border-b border-green-500/20 px-6 py-3 text-center"
+          >
+            <p className="text-green-400 text-sm font-medium">
+              ✓ Moved to {project.stage.charAt(0) + project.stage.slice(1).toLowerCase()} — {STAGE_TIPS[project.stage]}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="max-w-6xl mx-auto px-6 py-8">
+        {/* Stage tip */}
+        <div className="mb-6 bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-4 py-3 flex items-start gap-3">
+          <span className="text-lg mt-0.5">{STAGE_ICONS[project.stage]}</span>
+          <div>
+            <p className="text-xs text-indigo-400 font-semibold uppercase tracking-wide mb-0.5">{project.stage.charAt(0) + project.stage.slice(1).toLowerCase()} Stage</p>
+            <p className="text-sm text-gray-300">{STAGE_TIPS[project.stage]}</p>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left: Section menu */}
           <div className="lg:col-span-1">
@@ -499,14 +548,22 @@ export function ProjectClient({ projectId, userId }: { projectId: string; userId
                   const has = !!sectionsByType[type];
                   const isActive = activeSection === type;
                   const isGenerating = generating === type;
+                  const isStageFocus = stageSections.includes(type);
+                  const isDimmed = stageSections.length > 0 && !isStageFocus && !has && !isActive;
                   return (
                     <div key={type} className={`flex items-center justify-between p-3 rounded-xl mb-1 transition-all cursor-pointer ${
-                      isActive ? "bg-indigo-600/20 border border-indigo-500/30" : "hover:bg-white/5"
+                      isActive ? "bg-indigo-600/20 border border-indigo-500/30" :
+                      isStageFocus && !has ? "bg-indigo-500/10 border border-indigo-500/20" :
+                      isDimmed ? "opacity-40" :
+                      "hover:bg-white/5"
                     }`} onClick={() => has && setActiveSection(type)}>
                       <div className="flex items-center gap-2.5 min-w-0">
                         <span className="text-lg">{icon}</span>
                         <div className="min-w-0">
-                          <p className={`text-sm font-medium truncate ${isActive ? "text-white" : "text-gray-300"}`}>{label}</p>
+                          <div className="flex items-center gap-1.5">
+                            <p className={`text-sm font-medium truncate ${isActive ? "text-white" : isStageFocus ? "text-indigo-200" : "text-gray-300"}`}>{label}</p>
+                            {isStageFocus && !has && <span className="text-xs text-indigo-400 bg-indigo-500/20 px-1.5 py-0.5 rounded-full">Now</span>}
+                          </div>
                           {has && <p className="text-xs text-gray-500">v{sectionsByType[type].version}</p>}
                         </div>
                       </div>
@@ -516,7 +573,9 @@ export function ProjectClient({ projectId, userId }: { projectId: string; userId
                         className={`text-xs px-2.5 py-1 rounded-lg shrink-0 transition-all disabled:opacity-50 ${
                           has
                             ? "bg-white/10 text-gray-400 hover:bg-white/15"
-                            : "bg-indigo-600 text-white hover:bg-indigo-500"
+                            : isStageFocus
+                            ? "bg-indigo-600 text-white hover:bg-indigo-500"
+                            : "bg-white/10 text-gray-500 hover:bg-white/15"
                         }`}
                       >
                         {isGenerating ? "..." : has ? "Regen" : "Generate"}
