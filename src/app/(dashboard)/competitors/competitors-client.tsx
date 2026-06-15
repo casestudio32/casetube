@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLocalState } from "@/lib/hooks/use-local-state";
 
 type Video = {
   videoId: string;
@@ -170,8 +171,8 @@ function CompetitorCard({ competitor, onRemove }: { competitor: Competitor; onRe
 }
 
 export function CompetitorsClient() {
-  const [competitors, setCompetitors] = useState<Competitor[]>([]);
-  const [query, setQuery] = useState("");
+  const [competitors, setCompetitors] = useLocalState<Competitor[]>("ct_competitors_data", []);
+  const [query, setQuery] = useLocalState("ct_competitors_query", "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 

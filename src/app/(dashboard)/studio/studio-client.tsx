@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import React from "react";
+import { useLocalState } from "@/lib/hooks/use-local-state";
 
 type Tab = "ideas" | "hooks" | "script" | "repurpose";
 
 export function StudioClient({ userId }: { userId: string }) {
-  const [tab, setTab] = useState<Tab>("ideas");
+  const [tab, setTab] = useLocalState<Tab>("ct_studio_tab", "ideas");
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "ideas", label: "Ideas", icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> },
@@ -97,9 +98,9 @@ interface Idea {
 }
 
 function IdeasTab({ userId }: { userId: string }) {
-  const [topic, setTopic] = useState("");
+  const [topic, setTopic] = useLocalState("ct_studio_ideas_topic", "");
   const [loading, setLoading] = useState(false);
-  const [ideas, setIdeas] = useState<Idea[]>([]);
+  const [ideas, setIdeas] = useLocalState<Idea[]>("ct_studio_ideas_data", []);
   const [error, setError] = useState("");
   const { copied, copy } = useCopy();
 
@@ -191,9 +192,9 @@ interface Hook {
 }
 
 function HooksTab({ userId }: { userId: string }) {
-  const [topic, setTopic] = useState("");
+  const [topic, setTopic] = useLocalState("ct_studio_hooks_topic", "");
   const [loading, setLoading] = useState(false);
-  const [hooks, setHooks] = useState<Hook[]>([]);
+  const [hooks, setHooks] = useLocalState<Hook[]>("ct_studio_hooks_data", []);
   const [error, setError] = useState("");
   const { copied, copy } = useCopy();
 
@@ -274,11 +275,11 @@ interface Script {
 }
 
 function ScriptTab({ userId }: { userId: string }) {
-  const [title, setTitle] = useState("");
-  const [keyPoints, setKeyPoints] = useState("");
-  const [duration, setDuration] = useState("8-10");
+  const [title, setTitle] = useLocalState("ct_studio_script_title", "");
+  const [keyPoints, setKeyPoints] = useLocalState("ct_studio_script_keypoints", "");
+  const [duration, setDuration] = useLocalState("ct_studio_script_duration", "8-10");
   const [loading, setLoading] = useState(false);
-  const [script, setScript] = useState<Script | null>(null);
+  const [script, setScript] = useLocalState<Script | null>("ct_studio_script_data", null);
   const [error, setError] = useState("");
   const [open, setOpen] = useState<Record<number, boolean>>({});
   const { copied, copy } = useCopy();
@@ -424,10 +425,10 @@ interface RepurposeData {
 }
 
 function RepurposeTab({ userId }: { userId: string }) {
-  const [title, setTitle] = useState("");
-  const [summary, setSummary] = useState("");
+  const [title, setTitle] = useLocalState("ct_studio_repurpose_title", "");
+  const [summary, setSummary] = useLocalState("ct_studio_repurpose_summary", "");
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<RepurposeData | null>(null);
+  const [data, setData] = useLocalState<RepurposeData | null>("ct_studio_repurpose_data", null);
   const [error, setError] = useState("");
   const { copied, copy } = useCopy();
 

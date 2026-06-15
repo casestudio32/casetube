@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { useLocalState } from "@/lib/hooks/use-local-state";
 
 type Trend = {
   videoId: string;
@@ -29,14 +30,14 @@ function fmt(n: number): string {
 
 export function TrendsClient({ userId }: { userId: string }) {
   const router = useRouter();
-  const [trends, setTrends] = useState<Trend[]>([]);
-  const [niche, setNiche] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [trends, setTrends] = useLocalState<Trend[]>("ct_trends_data", []);
+  const [niche, setNiche] = useLocalState("ct_trends_niche", "");
+  const [fetchedAt, setFetchedAt] = useLocalState("ct_trends_fetchedat", "");
+  const [customNiche, setCustomNiche] = useLocalState("ct_trends_custom_niche", "");
+  const [searchNiche, setSearchNiche] = useLocalState("ct_trends_search_niche", "");
+  const [loading, setLoading] = useState(trends.length === 0);
   const [refreshing, setRefreshing] = useState(false);
-  const [fetchedAt, setFetchedAt] = useState("");
   const [creating, setCreating] = useState<string | null>(null);
-  const [customNiche, setCustomNiche] = useState("");
-  const [searchNiche, setSearchNiche] = useState("");
 
   const fetchTrends = async (refresh = false, nicheOverride?: string) => {
     if (refresh) setRefreshing(true);
@@ -54,7 +55,7 @@ export function TrendsClient({ userId }: { userId: string }) {
     setRefreshing(false);
   };
 
-  useEffect(() => { fetchTrends(); }, []);
+  useEffect(() => { if (trends.length === 0) fetchTrends(); }, []);
 
   const createProjectFromTrend = async (trend: Trend) => {
     setCreating(trend.videoId);

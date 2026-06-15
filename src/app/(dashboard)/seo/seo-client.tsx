@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useLocalState } from "@/lib/hooks/use-local-state";
 
 type Tab = "keywords" | "titles" | "description";
 type KwTab = "overview" | "related" | "matching" | "questions";
@@ -228,11 +229,11 @@ function KwTable({
 // ─── Keyword Explorer ────────────────────────────────────────────────────────
 
 function KeywordExplorer({ userId }: { userId: string }) {
-  const [topic, setTopic] = useState("");
+  const [topic, setTopic] = useLocalState("ct_seo_kw_topic", "");
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<KeywordData | null>(null);
+  const [data, setData] = useLocalState<KeywordData | null>("ct_seo_kw_data", null);
   const [error, setError] = useState("");
-  const [kwTab, setKwTab] = useState<KwTab>("overview");
+  const [kwTab, setKwTab] = useLocalState<KwTab>("ct_seo_kw_tab", "overview");
   const { copied, copy } = useCopy();
 
   async function research() {
@@ -501,7 +502,7 @@ function estimateVolume(difficulty: string): number {
 // ─── SEO Client ──────────────────────────────────────────────────────────────
 
 export function SEOClient({ userId }: { userId: string }) {
-  const [tab, setTab] = useState<Tab>("keywords");
+  const [tab, setTab] = useLocalState<Tab>("ct_seo_tab", "keywords");
 
   return (
     <div className="px-8 py-8 max-w-5xl">
@@ -565,10 +566,10 @@ function useCopy() {
 // ─── Title Generator ─────────────────────────────────────────────────────────
 
 function TitleGenerator({ userId }: { userId: string }) {
-  const [topic, setTopic] = useState("");
-  const [keyword, setKeyword] = useState("");
+  const [topic, setTopic] = useLocalState("ct_seo_title_topic", "");
+  const [keyword, setKeyword] = useLocalState("ct_seo_title_keyword", "");
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<TitleData | null>(null);
+  const [data, setData] = useLocalState<TitleData | null>("ct_seo_title_data", null);
   const [error, setError] = useState("");
   const { copied, copy } = useCopy();
 
@@ -668,10 +669,10 @@ function TitleGenerator({ userId }: { userId: string }) {
 // ─── Description Generator ────────────────────────────────────────────────────
 
 function DescriptionGenerator({ userId }: { userId: string }) {
-  const [title, setTitle] = useState("");
-  const [keywords, setKeywords] = useState("");
+  const [title, setTitle] = useLocalState("ct_seo_desc_title", "");
+  const [keywords, setKeywords] = useLocalState("ct_seo_desc_keywords", "");
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<DescriptionData | null>(null);
+  const [data, setData] = useLocalState<DescriptionData | null>("ct_seo_desc_data", null);
   const [error, setError] = useState("");
   const { copied, copy } = useCopy();
 
