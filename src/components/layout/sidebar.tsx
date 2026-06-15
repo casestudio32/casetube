@@ -122,10 +122,10 @@ export function Sidebar() {
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                 active
                   ? "bg-red-600/15 text-red-400"
-                  : "text-zinc-500 hover:text-white hover:bg-zinc-800/60"
+                  : "text-white hover:bg-zinc-800/60"
               }`}
             >
-              <span className={`flex-shrink-0 ${active ? "text-red-400" : "text-zinc-500 group-hover:text-white"}`}>
+              <span className={`flex-shrink-0 ${active ? "text-red-400" : "text-zinc-400"}`}>
                 {item.icon}
               </span>
               {item.label}
@@ -138,14 +138,14 @@ export function Sidebar() {
       <div className="px-3 py-4 border-t border-zinc-800 space-y-0.5">
         <Link
           href="/onboarding"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-zinc-500 hover:text-white hover:bg-zinc-800/60 transition-all"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-white hover:bg-zinc-800/60 transition-all"
         >
           <span className="flex-shrink-0">{Icons.settings}</span>
           Settings
         </Link>
         <button
           onClick={() => signOut({ callbackUrl: "/" })}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-all"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-white hover:text-red-400 hover:bg-red-500/10 transition-all"
         >
           <span className="flex-shrink-0">{Icons.signout}</span>
           Sign Out
