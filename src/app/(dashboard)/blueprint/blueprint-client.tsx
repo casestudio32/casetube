@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { ReactNode } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+
 type Blueprint = {
   id: string;
   profileId: string;
@@ -22,10 +24,96 @@ type Blueprint = {
   updatedAt: Date;
 };
 
+interface RoadmapPhase {
+  number: number;
+  label: string;
+  days: string;
+  tasks: string[];
+}
+
 interface Props {
   userId: string;
   userName: string;
   existingBlueprint: Blueprint | null;
+}
+
+const DAYS_OF_WEEK = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const DAY_ALIASES: Record<string, string> = {
+  monday: "Mon", tuesday: "Tue", wednesday: "Wed", thursday: "Thu",
+  friday: "Fri", saturday: "Sat", sunday: "Sun",
+  mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu",
+  fri: "Fri", sat: "Sat", sun: "Sun",
+};
+
+function parseRoadmap(text: string): RoadmapPhase[] {
+  if (!text) return [];
+  const phases: RoadmapPhase[] = [];
+  // Split on "Phase N" boundaries
+  const phaseBlocks = text.split(/(?=Phase\s+\d)/i).filter(Boolean);
+  for (const block of phaseBlocks) {
+    const headerMatch = block.match(/Phase\s+(\d+)[^(]*\(([^)]+)\)/i);
+    if (!headerMatch) continue;
+    const number = parseInt(headerMatch[1]);
+    const days = headerMatch[2];
+    const label = `Phase ${number}`;
+    // Everything after the header is tasks/content
+    const body = block.slice(headerMatch[0].length).trim();
+    // Split on bullets, numbered items, dashes, or newlines
+    const rawTasks = body
+      .split(/\n|•|–|-|\d+\.\s/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 10);
+    phases.push({ number, label, days, tasks: rawTasks.slice(0, 6) });
+  }
+  return phases;
+}
+
+function parseScheduleDays(text: string): string[] {
+  if (!text) return [];
+  const lower = text.toLowerCase();
+  const found: string[] = [];
+  for (const [alias, canonical] of Object.entries(DAY_ALIASES)) {
+    if (lower.includes(alias) && !found.includes(canonical)) {
+      found.push(canonical);
+    }
+  }
+  return found;
+}
+
+function parseScheduleTime(text: string): string {
+  const match = text.match(/\d{1,2}(?::\d{2})?\s*(?:am|pm)/i);
+  return match ? match[0] : "";
+}
+
+function getStorageKey(userId: string, phase: number) {
+  return `bp_tasks_${userId}_phase${phase}`;
+}
+
+function loadTasksDone(userId: string, phase: number, total: number): boolean[] {
+  try {
+    const raw = localStorage.getItem(getStorageKey(userId, phase));
+    if (!raw) return Array(total).fill(false);
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length === total) return parsed;
+    return Array(total).fill(false);
+  } catch {
+    return Array(total).fill(false);
+  }
+}
+
+function saveTasksDone(userId: string, phase: number, done: boolean[]) {
+  try {
+    localStorage.setItem(getStorageKey(userId, phase), JSON.stringify(done));
+  } catch { /* ignore */ }
+}
+
+function getBlueprintStartDate(userId: string): Date {
+  const key = `bp_start_${userId}`;
+  const stored = localStorage.getItem(key);
+  if (stored) return new Date(stored);
+  const now = new Date();
+  localStorage.setItem(key, now.toISOString());
+  return now;
 }
 
 const BpIcons: Record<string, ReactNode> = {
@@ -76,6 +164,10 @@ export function BlueprintClient({ userId, userName, existingBlueprint }: Props) 
   if (error) return <ErrorState error={error} onRetry={generateBlueprint} />;
   if (!blueprint) return null;
 
+  const phases = parseRoadmap(blueprint.growthRoadmap);
+  const scheduleDays = parseScheduleDays(blueprint.postingSchedule);
+  const scheduleTime = parseScheduleTime(blueprint.postingSchedule);
+
   return (
     <div className="min-h-screen bg-[#080808]">
       {/* Header */}
@@ -109,14 +201,81 @@ export function BlueprintClient({ userId, userName, existingBlueprint }: Props) 
           </p>
         </motion.div>
 
+        {/* Progress Nudge */}
+        {phases.length > 0 && (
+          <ProgressNudge userId={userId} phases={phases} />
+        )}
+
         <div className="space-y-6">
           <BlueprintCard index={0} icon={BpIcons.niche} title="Your Niche" content={blueprint.niche} />
           <BlueprintCard index={1} icon={BpIcons.audience} title="Target Audience" content={blueprint.targetAudience} />
           <BlueprintCard index={2} icon={BpIcons.pillars} title="Content Pillars" content={blueprint.contentPillars} isList />
           <BlueprintCard index={3} icon={BpIcons.voice} title="Brand Voice" content={blueprint.brandVoice} />
           <BlueprintCard index={4} icon={BpIcons.formats} title="Video Formats" content={blueprint.videoFormats} isList />
-          <BlueprintCard index={5} icon={BpIcons.schedule} title="Posting Schedule" content={blueprint.postingSchedule} />
-          <BlueprintCard index={6} icon={BpIcons.roadmap} title="90-Day Growth Roadmap" content={blueprint.growthRoadmap} large />
+
+          {/* Posting Schedule Visual */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 5 * 0.07 }}
+            className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-6"
+          >
+            <div className="flex items-center gap-3 mb-5">
+              <span className="text-zinc-400">{BpIcons.schedule}</span>
+              <h3 className="text-white font-semibold text-lg">Posting Schedule</h3>
+            </div>
+            <p className="text-zinc-400 text-sm mb-5 leading-relaxed">{blueprint.postingSchedule}</p>
+            <div className="grid grid-cols-7 gap-2">
+              {DAYS_OF_WEEK.map((day) => {
+                const active = scheduleDays.includes(day);
+                return (
+                  <div
+                    key={day}
+                    className={`rounded-xl py-3 flex flex-col items-center gap-1 transition-all ${
+                      active
+                        ? "bg-red-500/15 border border-red-500/30"
+                        : "bg-zinc-800/40 border border-zinc-700/30"
+                    }`}
+                  >
+                    <span className={`text-xs font-semibold ${active ? "text-red-400" : "text-zinc-500"}`}>
+                      {day}
+                    </span>
+                    {active && (
+                      <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            {scheduleTime && (
+              <p className="text-zinc-500 text-xs mt-3">
+                Recommended upload time: <span className="text-zinc-300">{scheduleTime}</span>
+              </p>
+            )}
+          </motion.div>
+
+          {/* Roadmap Phase Cards */}
+          {phases.length > 0 ? (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 6 * 0.07 }}
+              className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-6"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <span className="text-zinc-400">{BpIcons.roadmap}</span>
+                <h3 className="text-white font-semibold text-lg">90-Day Growth Roadmap</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {phases.map((phase) => (
+                  <PhaseCard key={phase.number} phase={phase} userId={userId} niche={blueprint.niche} />
+                ))}
+              </div>
+            </motion.div>
+          ) : (
+            <BlueprintCard index={6} icon={BpIcons.roadmap} title="90-Day Growth Roadmap" content={blueprint.growthRoadmap} large />
+          )}
+
           <BlueprintCard index={7} icon={BpIcons.monetize} title="Monetization Strategy" content={blueprint.monetization} large />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <BlueprintCard index={8} icon={BpIcons.weakness} title="Potential Weaknesses" content={blueprint.weaknesses} />
@@ -139,16 +298,197 @@ export function BlueprintClient({ userId, userName, existingBlueprint }: Props) 
             <Link href="/dashboard" className="btn-primary">
               Go to Dashboard →
             </Link>
-            <button
-              onClick={generateBlueprint}
-              className="btn-secondary text-sm"
-            >
+            <button onClick={generateBlueprint} className="btn-secondary text-sm">
               Regenerate Blueprint
             </button>
           </div>
         </motion.div>
       </div>
     </div>
+  );
+}
+
+function PhaseCard({ phase, userId, niche }: { phase: RoadmapPhase; userId: string; niche: string }) {
+  const [tasksDone, setTasksDone] = useState<boolean[]>([]);
+  const [creating, setCreating] = useState(false);
+  const [created, setCreated] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    setTasksDone(loadTasksDone(userId, phase.number, phase.tasks.length));
+  }, [userId, phase.number, phase.tasks.length]);
+
+  const toggleTask = useCallback((i: number) => {
+    setTasksDone((prev) => {
+      const next = [...prev];
+      next[i] = !next[i];
+      saveTasksDone(userId, phase.number, next);
+      return next;
+    });
+  }, [userId, phase.number]);
+
+  const completed = tasksDone.filter(Boolean).length;
+  const total = phase.tasks.length;
+  const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+  const phaseColors: Record<number, { bg: string; border: string; text: string; bar: string }> = {
+    1: { bg: "bg-blue-500/10", border: "border-blue-500/20", text: "text-blue-400", bar: "bg-blue-500" },
+    2: { bg: "bg-purple-500/10", border: "border-purple-500/20", text: "text-purple-400", bar: "bg-purple-500" },
+    3: { bg: "bg-red-500/10", border: "border-red-500/20", text: "text-red-400", bar: "bg-red-500" },
+  };
+  const colors = phaseColors[phase.number] || phaseColors[1];
+
+  async function handleStart() {
+    setCreating(true);
+    try {
+      const res = await fetch("/api/projects/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          title: `${niche} — ${phase.label}`,
+          description: `Project created from Blueprint ${phase.label} (${phase.days})`,
+          videoTopic: niche,
+        }),
+      });
+      if (res.ok) {
+        setCreated(true);
+        setTimeout(() => router.push("/projects"), 800);
+      }
+    } catch { /* ignore */ }
+    finally { setCreating(false); }
+  }
+
+  return (
+    <div className={`rounded-xl border ${colors.border} p-4 flex flex-col gap-3`}>
+      <div className="flex items-center justify-between">
+        <span className={`text-xs font-bold uppercase tracking-wider ${colors.text}`}>{phase.label}</span>
+        <span className="text-xs text-zinc-500">{phase.days}</span>
+      </div>
+
+      {/* Progress bar */}
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-xs text-zinc-500">{completed}/{total} tasks</span>
+          <span className={`text-xs font-semibold ${colors.text}`}>{progress}%</span>
+        </div>
+        <div className="h-1.5 bg-zinc-700/50 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${colors.bar}`}
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Task checklist */}
+      <ul className="space-y-2 flex-1">
+        {phase.tasks.map((task, i) => (
+          <li key={i} className="flex items-start gap-2 cursor-pointer group" onClick={() => toggleTask(i)}>
+            <span className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded border transition-colors flex items-center justify-center ${
+              tasksDone[i]
+                ? `${colors.bg} ${colors.border}`
+                : "border-zinc-600 bg-transparent"
+            }`}>
+              {tasksDone[i] && (
+                <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                  <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={colors.text} />
+                </svg>
+              )}
+            </span>
+            <span className={`text-xs leading-relaxed transition-colors ${tasksDone[i] ? "text-zinc-500 line-through" : "text-zinc-300 group-hover:text-white"}`}>
+              {task}
+            </span>
+          </li>
+        ))}
+      </ul>
+
+      {/* Start Phase button */}
+      <button
+        onClick={handleStart}
+        disabled={creating || created}
+        className={`w-full text-xs font-semibold py-2 rounded-lg transition-all border ${
+          created
+            ? "bg-green-500/10 border-green-500/30 text-green-400 cursor-default"
+            : `${colors.bg} ${colors.border} ${colors.text} hover:opacity-80`
+        }`}
+      >
+        {created ? "✓ Project Created" : creating ? "Creating..." : `Start ${phase.label} →`}
+      </button>
+    </div>
+  );
+}
+
+function ProgressNudge({ userId, phases }: { userId: string; phases: RoadmapPhase[] }) {
+  const [mounted, setMounted] = useState(false);
+  const [daysElapsed, setDaysElapsed] = useState(0);
+  const [totalDone, setTotalDone] = useState(0);
+  const [totalTasks, setTotalTasks] = useState(0);
+
+  useEffect(() => {
+    setMounted(true);
+    const start = getBlueprintStartDate(userId);
+    const elapsed = Math.floor((Date.now() - start.getTime()) / (1000 * 60 * 60 * 24));
+    setDaysElapsed(elapsed);
+
+    let done = 0;
+    let total = 0;
+    for (const phase of phases) {
+      const saved = loadTasksDone(userId, phase.number, phase.tasks.length);
+      done += saved.filter(Boolean).length;
+      total += phase.tasks.length;
+    }
+    setTotalDone(done);
+    setTotalTasks(total);
+  }, [userId, phases]);
+
+  if (!mounted) return null;
+
+  const currentPhase = daysElapsed < 30 ? 1 : daysElapsed < 60 ? 2 : 3;
+  const expectedDone = Math.min(totalTasks, Math.round((daysElapsed / 90) * totalTasks));
+  const isBehind = totalDone < expectedDone && daysElapsed > 3;
+  const isAhead = totalDone >= totalTasks && totalTasks > 0;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={`mb-6 rounded-xl border px-5 py-4 flex items-center justify-between gap-4 flex-wrap ${
+          isAhead
+            ? "bg-green-500/10 border-green-500/20"
+            : isBehind
+            ? "bg-amber-500/10 border-amber-500/20"
+            : "bg-zinc-800/60 border-zinc-700/40"
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
+            isAhead ? "bg-green-500/20 text-green-400" : isBehind ? "bg-amber-500/20 text-amber-400" : "bg-zinc-700 text-zinc-300"
+          }`}>
+            {isAhead ? "✓" : isBehind ? "!" : "→"}
+          </div>
+          <div>
+            <p className="text-white text-sm font-semibold">
+              {isAhead
+                ? "All tasks complete — great work!"
+                : `Phase ${currentPhase} · Day ${daysElapsed} of 90`}
+            </p>
+            <p className={`text-xs ${isBehind ? "text-amber-400" : "text-zinc-400"}`}>
+              {isAhead
+                ? "Your blueprint goals are all checked off."
+                : isBehind
+                ? `You're behind — ${expectedDone - totalDone} tasks to catch up on.`
+                : `${totalDone}/${totalTasks} tasks completed`}
+            </p>
+          </div>
+        </div>
+        {isBehind && (
+          <span className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-lg font-medium">
+            Catch up now ↓
+          </span>
+        )}
+      </motion.div>
+    </AnimatePresence>
   );
 }
 
