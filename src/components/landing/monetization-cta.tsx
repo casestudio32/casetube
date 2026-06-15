@@ -50,32 +50,35 @@ export function MonetizationCTA() {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="flex-1 flex justify-center"
         >
-          {/* This div is the anchor — same size as the image, everything is positioned inside it */}
-          <div className="relative w-[420px] h-[540px]">
+          {/* Wider container so cards can bleed without overlapping the text */}
+          <div className="relative h-[540px]" style={{ width: "580px" }}>
 
-            {/* Person image */}
-            <Image
-              src="/Images/Man.png"
-              alt="Creator using CaseTube"
-              fill
-              className="object-contain object-bottom"
-              sizes="420px"
-            />
+            {/* Person image — centered horizontally within the wider container */}
+            <div className="absolute inset-0 flex justify-center">
+              <div className="relative w-[380px] h-full">
+                <Image
+                  src="/Images/Man.png"
+                  alt="Creator using CaseTube"
+                  fill
+                  className="object-contain object-bottom"
+                  sizes="380px"
+                />
+                {/* Bottom fade */}
+                <div
+                  className="absolute bottom-0 left-0 right-0 pointer-events-none"
+                  style={{ height: "120px", background: "linear-gradient(to top, #080808 20%, transparent)" }}
+                />
+              </div>
+            </div>
 
-            {/* Bottom fade */}
-            <div
-              className="absolute bottom-0 left-0 right-0 pointer-events-none"
-              style={{ height: "120px", background: "linear-gradient(to top, #080808 20%, transparent)" }}
-            />
-
-            {/* Card 1 — Subscribers — top-left, overlapping the shoulder */}
+            {/* Card 1 — Subscribers — top-left shoulder */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.45, duration: 0.5 }}
               className="absolute rounded-2xl px-4 py-3.5"
-              style={{ top: "8%", left: "-12%", minWidth: "180px", ...glassCard }}
+              style={{ top: "10%", left: "0px", minWidth: "185px", ...glassCard }}
             >
               <div className="flex items-center gap-2 mb-2">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -91,14 +94,14 @@ export function MonetizationCTA() {
               </div>
             </motion.div>
 
-            {/* Card 2 — Watch Hours — bottom-right, overlapping the lower body */}
+            {/* Card 2 — Watch Hours — bottom-right near the hand */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.6, duration: 0.5 }}
               className="absolute rounded-2xl px-4 py-3.5"
-              style={{ bottom: "28%", right: "-14%", minWidth: "180px", ...glassCard }}
+              style={{ bottom: "26%", right: "0px", minWidth: "185px", ...glassCard }}
             >
               <div className="flex items-center gap-2 mb-2">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
