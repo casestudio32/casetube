@@ -11,6 +11,7 @@ const NAV = [
   { href: "/studio", icon: "✍️", label: "Content Studio" },
   { href: "/projects", icon: "📋", label: "Projects" },
   { href: "/trends", icon: "🔥", label: "Trend Finder" },
+  { href: "/competitors", icon: "🔭", label: "Competitors" },
   { href: "/analytics", icon: "📊", label: "Analytics" },
 ];
 
