@@ -99,7 +99,7 @@ export function MonetizationCTA() {
               {/* Person image */}
               <div className="relative h-[360px] md:h-[440px] w-[280px] md:w-[340px]">
                 <Image
-                  src="/Images/Man with Phone.png"
+                  src="/Images/man-with-phone.png"
                   alt="Creator using CaseTube"
                   fill
                   className="object-contain object-bottom"
