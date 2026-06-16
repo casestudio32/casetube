@@ -99,6 +99,31 @@ export async function getNicheIntelligence(niche: string, topic?: string): Promi
   }
 }
 
+// Returns real YouTube autocomplete suggestions (free, no quota)
+export async function getYouTubeSuggestions(keyword: string): Promise<string[]> {
+  try {
+    const url = `https://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q=${encodeURIComponent(keyword)}&hl=en`;
+    const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
+    const json = await res.json();
+    return Array.isArray(json[1]) ? (json[1] as string[]).slice(0, 25) : [];
+  } catch {
+    return [];
+  }
+}
+
+// Returns total video count for a query — real competition signal (100 API units per call)
+export async function getSearchVideoCount(keyword: string): Promise<number> {
+  if (!YOUTUBE_API_KEY) return 0;
+  try {
+    const url = `${BASE}/search?part=id&q=${encodeURIComponent(keyword)}&type=video&maxResults=1&key=${YOUTUBE_API_KEY}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    return data.pageInfo?.totalResults ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
 export function formatNicheContext(intel: NicheIntelligence): string {
   const topTitlesText = intel.topVideos
     .slice(0, 8)

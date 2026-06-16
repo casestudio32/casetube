@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { generateAI } from "@/lib/ai/provider";
 import { db } from "@/lib/db/client";
-import { getNicheIntelligence, formatNicheContext } from "@/lib/youtube/client";
+import { getNicheIntelligence, formatNicheContext, getYouTubeSuggestions, getSearchVideoCount } from "@/lib/youtube/client";
 
 export async function POST(req: Request) {
   try {
@@ -11,7 +11,12 @@ export async function POST(req: Request) {
     const memory = userId ? await db.creatorMemory.findUnique({ where: { userId } }) : null;
     const context = memory ? `Creator niche: ${memory.niche}. Target audience: ${memory.targetAudience}.` : "";
 
-    const intel = await getNicheIntelligence(topic, topic);
+    // Parallel: AI context + YouTube Suggest (free) + video count (real competition signal)
+    const [intel, suggestions, videoCount] = await Promise.all([
+      getNicheIntelligence(topic, topic),
+      getYouTubeSuggestions(topic),
+      getSearchVideoCount(topic),
+    ]);
     const youtubeContext = intel ? formatNicheContext(intel) : "";
 
     const prompt = `You are a YouTube SEO expert. A creator wants to rank for: "${topic}".
@@ -59,7 +64,12 @@ Generate 20 keywords, 15 long-tail, 12 questions, 6 angles. Every item must be g
     if (!jsonMatch) throw new Error("Invalid AI response");
     const data = JSON.parse(jsonMatch[0]);
 
-    return NextResponse.json({ data, youtubeIntel: intel ? { avgViews: intel.avgViews, topTitles: intel.topTitles.slice(0, 5), videoCount: intel.topVideos.length } : null });
+    return NextResponse.json({
+      data,
+      suggestions,
+      videoCount,
+      youtubeIntel: intel ? { avgViews: intel.avgViews, topTitles: intel.topTitles.slice(0, 5), videoCount: intel.topVideos.length } : null,
+    });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Failed to research keywords" }, { status: 500 });

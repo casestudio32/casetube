@@ -237,10 +237,13 @@ function KwTable({
 
 // ─── Keyword Explorer ────────────────────────────────────────────────────────
 
+interface YtMeta { videoCount: number; suggestions: string[] }
+
 function KeywordExplorer({ userId }: { userId: string }) {
   const [topic, setTopic] = useLocalState("ct_seo_kw_topic", "");
   const [loading, setLoading] = useState(false);
   const [data, setData] = useLocalState<KeywordData | null>("ct_seo_kw_data", null);
+  const [ytMeta, setYtMeta] = useLocalState<YtMeta | null>("ct_seo_kw_ytmeta", null);
   const [error, setError] = useState("");
   const [kwTab, setKwTab] = useLocalState<KwTab>("ct_seo_kw_tab", "overview");
   const { copied, copy } = useCopy();
@@ -250,6 +253,7 @@ function KeywordExplorer({ userId }: { userId: string }) {
     setLoading(true);
     setError("");
     setData(null);
+    setYtMeta(null);
     setKwTab("overview");
     try {
       const res = await fetch("/api/seo/keywords", {
@@ -260,6 +264,7 @@ function KeywordExplorer({ userId }: { userId: string }) {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error);
       setData(json.data);
+      setYtMeta({ videoCount: json.videoCount ?? 0, suggestions: json.suggestions ?? [] });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to research. Please try again.");
     } finally {
@@ -267,44 +272,63 @@ function KeywordExplorer({ userId }: { userId: string }) {
     }
   }
 
-  // Build rows for each tab
-  const relatedRows = useMemo<KeywordRow[]>(() => data ? [
-    {
-      keyword: data.primaryKeyword,
-      relatedScore: undefined,
-      searchVolume: parseVolume(data.searchVolume),
-      competition: data.competition,
-      competitionScore: compNum(data.competition),
-      overall: data.opportunityScore,
-      wordCount: data.primaryKeyword.split(" ").length,
-    },
-    ...data.keywords.map((kw) => ({
+  // Build rows for each tab — no Math.random(), all values are stable per keyword
+  const relatedRows = useMemo<KeywordRow[]>(() => {
+    if (!data) return [];
+    const realCompScore = ytMeta?.videoCount ? videoCountToScore(ytMeta.videoCount) : compNum(data.competition);
+    // Merge YouTube suggestions with AI keywords, dedup by keyword text
+    const aiKeywords = data.keywords.map((kw) => ({
       keyword: kw.keyword,
       relatedScore: kw.opportunity === "High" ? 1.4 : kw.opportunity === "Medium" ? 1.1 : 0.8,
-      searchVolume: estimateVolume(kw.difficulty),
+      searchVolume: estimateVolume(kw.keyword, kw.difficulty),
       competition: kw.difficulty,
-      competitionScore: kw.difficulty === "Easy" ? 8 + Math.random() * 12 : kw.difficulty === "Medium" ? 30 + Math.random() * 20 : 60 + Math.random() * 30,
-      overall: kw.opportunity === "High" ? 72 : kw.opportunity === "Medium" ? 58 : 44,
+      competitionScore: kw.difficulty === "Easy" ? stableNum(kw.keyword, 5, 20) : kw.difficulty === "Medium" ? stableNum(kw.keyword, 25, 50) : stableNum(kw.keyword, 55, 85),
+      overall: kw.opportunity === "High" ? stableNum(kw.keyword + "o", 68, 82) : kw.opportunity === "Medium" ? stableNum(kw.keyword + "o", 52, 67) : stableNum(kw.keyword + "o", 38, 52),
       wordCount: kw.keyword.split(" ").length,
-    })),
-  ] : [], [data]);
+    }));
+    const aiKeySet = new Set(aiKeywords.map(k => k.keyword.toLowerCase()));
+    const ytRows = (ytMeta?.suggestions ?? [])
+      .filter(s => !aiKeySet.has(s.toLowerCase()))
+      .map((s) => ({
+        keyword: s,
+        relatedScore: 1.0,
+        searchVolume: estimateVolume(s, "Medium"),
+        competition: "Medium",
+        competitionScore: stableNum(s, 20, 55),
+        overall: stableNum(s + "o", 45, 72),
+        wordCount: s.split(" ").length,
+      }));
+    return [
+      {
+        keyword: data.primaryKeyword,
+        relatedScore: undefined,
+        searchVolume: parseVolume(data.searchVolume),
+        competition: data.competition,
+        competitionScore: realCompScore,
+        overall: data.opportunityScore,
+        wordCount: data.primaryKeyword.split(" ").length,
+      },
+      ...aiKeywords,
+      ...ytRows,
+    ];
+  }, [data, ytMeta]);
 
   const matchingRows = useMemo<KeywordRow[]>(() => data ? data.longTail.map((lt) => ({
     keyword: lt.keyword,
     why: lt.why,
-    searchVolume: estimateVolume("Easy"),
+    searchVolume: estimateVolume(lt.keyword, "Easy"),
     competition: "Very low",
-    competitionScore: 4 + Math.random() * 10,
-    overall: Math.floor(60 + Math.random() * 20),
+    competitionScore: stableNum(lt.keyword, 3, 16),
+    overall: stableNum(lt.keyword + "o", 58, 80),
     wordCount: lt.keyword.split(" ").length,
   })) : [], [data]);
 
   const questionRows = useMemo<KeywordRow[]>(() => data ? data.questions.map((q) => ({
     keyword: q,
-    searchVolume: estimateVolume("Easy"),
+    searchVolume: estimateVolume(q, "Easy"),
     competition: "Low",
-    competitionScore: 12 + Math.random() * 15,
-    overall: Math.floor(55 + Math.random() * 20),
+    competitionScore: stableNum(q, 10, 28),
+    overall: stableNum(q + "o", 52, 76),
     wordCount: q.split(" ").length,
   })) : [], [data]);
 
@@ -336,6 +360,21 @@ function KeywordExplorer({ userId }: { userId: string }) {
       </div>
 
       {error && <ErrorBox message={error} />}
+
+      {data && ytMeta && (
+        <div className="flex items-center gap-2 mb-4 text-xs text-zinc-500">
+          <span className="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+            YouTube Suggest: <span className="text-zinc-300 font-medium">{ytMeta.suggestions.length} real keywords</span>
+          </span>
+          {ytMeta.videoCount > 0 && (
+            <span className="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
+              Video competition: <span className="text-zinc-300 font-medium">{ytMeta.videoCount.toLocaleString()} videos</span>
+            </span>
+          )}
+        </div>
+      )}
 
       {data && (
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
@@ -521,10 +560,24 @@ function compNum(c: string): number {
   return 80;
 }
 
-function estimateVolume(difficulty: string): number {
-  if (difficulty === "Easy") return Math.floor(2000 + Math.random() * 12000);
-  if (difficulty === "Medium") return Math.floor(10000 + Math.random() * 40000);
-  return Math.floor(40000 + Math.random() * 100000);
+// Deterministic hash: returns a stable integer in [min, max] for the same seed every time
+function stableNum(seed: string, min: number, max: number): number {
+  let h = 5381;
+  for (let i = 0; i < seed.length; i++) h = Math.imul((h << 5) + h, 1) ^ seed.charCodeAt(i);
+  return min + (Math.abs(h) % (max - min + 1));
+}
+
+// Normalize YouTube video count to a 0–100 competition score
+function videoCountToScore(count: number): number {
+  if (count <= 0) return 50;
+  // log scale: 0 → 0, 100K → ~36, 1M → ~50, 10M → ~67, 100M → ~83
+  return Math.min(99, Math.round((Math.log10(count + 1) / Math.log10(200_000_000)) * 100));
+}
+
+function estimateVolume(seed: string, difficulty: string): number {
+  if (difficulty === "Easy") return stableNum(seed, 2000, 14000);
+  if (difficulty === "Medium") return stableNum(seed, 10000, 50000);
+  return stableNum(seed, 40000, 140000);
 }
 
 // ─── SEO Client ──────────────────────────────────────────────────────────────
