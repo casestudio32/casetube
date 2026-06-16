@@ -268,7 +268,7 @@ function KeywordExplorer({ userId }: { userId: string }) {
   }
 
   // Build rows for each tab
-  const relatedRows: KeywordRow[] = data ? [
+  const relatedRows = useMemo<KeywordRow[]>(() => data ? [
     {
       keyword: data.primaryKeyword,
       relatedScore: undefined,
@@ -287,9 +287,9 @@ function KeywordExplorer({ userId }: { userId: string }) {
       overall: kw.opportunity === "High" ? 72 : kw.opportunity === "Medium" ? 58 : 44,
       wordCount: kw.keyword.split(" ").length,
     })),
-  ] : [];
+  ] : [], [data]);
 
-  const matchingRows: KeywordRow[] = data ? data.longTail.map((lt) => ({
+  const matchingRows = useMemo<KeywordRow[]>(() => data ? data.longTail.map((lt) => ({
     keyword: lt.keyword,
     why: lt.why,
     searchVolume: estimateVolume("Easy"),
@@ -297,16 +297,16 @@ function KeywordExplorer({ userId }: { userId: string }) {
     competitionScore: 4 + Math.random() * 10,
     overall: Math.floor(60 + Math.random() * 20),
     wordCount: lt.keyword.split(" ").length,
-  })) : [];
+  })) : [], [data]);
 
-  const questionRows: KeywordRow[] = data ? data.questions.map((q) => ({
+  const questionRows = useMemo<KeywordRow[]>(() => data ? data.questions.map((q) => ({
     keyword: q,
     searchVolume: estimateVolume("Easy"),
     competition: "Low",
     competitionScore: 12 + Math.random() * 15,
     overall: Math.floor(55 + Math.random() * 20),
     wordCount: q.split(" ").length,
-  })) : [];
+  })) : [], [data]);
 
   const KW_TABS: { id: KwTab; label: string }[] = [
     { id: "overview", label: "Overview" },
