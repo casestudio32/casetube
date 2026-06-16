@@ -14,30 +14,72 @@ export async function POST(req: Request) {
     const intel = await getNicheIntelligence(title, title);
     const youtubeContext = intel ? formatNicheContext(intel) : "";
 
-    const prompt = `You are a YouTube SEO specialist. Write a fully optimised description for: "${title}"
-${keywords ? `Keywords to include: ${keywords}` : ""}
+    const prompt = `You are a YouTube SEO specialist writing a description for the video: "${title}"
+${keywords ? `Creator-supplied keywords to weave in naturally: ${keywords}` : ""}
 
+REAL YOUTUBE DATA FOR "${title}":
 ${youtubeContext}
 
-${context}
+Creator context: ${context}
 
-The first 2 lines of the description are critical — they show before "Show more" and determine whether viewers click through. Study what top videos in this niche use and write a description that matches that level of quality.
+---
+KEYWORD OPTIMIZATION RULES (follow all of these strictly):
 
-Use the real keywords from the top videos above. Make the tags and hashtags match what's actually performing in this niche.
+RULE 1 — FRONT-LOAD THE PRIMARY KEYWORD
+The first 1-2 sentences are the most critical. YouTube reads them heavily for context and they appear in search results before "Show more". The primary keyword from the title MUST appear naturally in the very first sentence.
 
-Return ONLY valid JSON. IMPORTANT: description must be a single string with \\n for line breaks:
+RULE 2 — ONE PRIMARY KEYWORD
+The primary keyword is the exact topic of this video: "${title}". Mention it 2-4 times naturally across the description. Do not repeat it more than that.
+
+RULE 3 — SEMANTIC KEYWORDS ONLY
+Include related terms that genuinely belong to the topic of "${title}". Study the top video titles above — what specific sub-topics, techniques, tools, and concepts do they reference? Use those. Do NOT include popular but unrelated keywords just because they have high search volume.
+
+RULE 4 — NEVER KEYWORD STUFF
+Never list keywords. Never repeat phrases unnaturally. Every keyword must appear inside a meaningful, readable sentence. Write for humans first.
+
+RULE 5 — MATCH SEARCH INTENT EXACTLY
+Ask: what would someone type into YouTube to find THIS exact video? The description must answer that precisely. If this is a tutorial, describe exactly what the viewer will learn to do. If it's a review, describe exactly what is being reviewed.
+
+RULE 6 — STAY ON TOPIC
+ONLY include words, concepts, and references that are directly about "${title}". Do not mention unrelated topics, other YouTube channels, or popular terms that have nothing to do with this video.
+
+RULE 7 — LONG-TAIL PHRASING
+Where possible, use specific long-tail phrases (e.g. "how to create smooth stickman animation for beginners") rather than broad single words (e.g. "animation").
+
+---
+STRUCTURE (follow this exactly):
+
+Section 1 — Search Snippet (first 2 sentences, shown before "Show more"):
+• Primary keyword in sentence 1
+• What the viewer will learn/get from watching
+
+Section 2 — Expanded Summary (2-3 sentences):
+• Add semantic keywords from the real YouTube data above
+• Describe the specific content, techniques, or steps covered
+• Stay tightly on the topic of "${title}"
+
+Section 3 — Timestamps (realistic for this video topic)
+
+Section 4 — Links placeholder
+
+Section 5 — Subscribe line (mention the specific niche/topic, not a generic "content")
+
+Section 6 — 2-3 hashtags only (directly relevant to "${title}", no generic ones)
+
+---
+Return ONLY valid JSON. description must be a single string with \\n for line breaks:
 {
-  "description": "First compelling line that hooks immediately.\\n\\nSecond paragraph — value proposition and what viewers will learn. Include primary keyword naturally.\\n\\n⏱ TIMESTAMPS\\n0:00 Introduction\\n2:00 Main section\\n\\n🔗 LINKS\\n[Your website]\\n[Social media]\\n\\n✅ Subscribe for more [niche] content!\\n\\n${keywords ? keywords.split(",").slice(0, 3).join(" | ") : ""}",
-  "tags": ["tag1", "tag2", "tag3", "tag4", "tag5", "tag6", "tag7", "tag8", "tag9", "tag10", "tag11", "tag12", "tag13", "tag14", "tag15"],
-  "hashtags": ["#hashtag1", "#hashtag2", "#hashtag3", "#hashtag4", "#hashtag5"]
+  "description": "...",
+  "tags": ["tag1",...] (15 tags, all directly about "${title}" — pulled from real keywords above),
+  "hashtags": ["#hashtag1", "#hashtag2", "#hashtag3"] (exactly 3, topic-specific only)
 }
 
-Rules: description is a single JSON string with \\n for line breaks, 300-400 words, tags array of exactly 15 strings, hashtags array of exactly 5 strings starting with #. Tags must reflect real keywords from the niche data above. Return ONLY the JSON object.`;
+Return ONLY the JSON object.`;
 
     const response = await generateAI({
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
-      maxTokens: 2000,
+      maxTokens: 3000,
     });
 
     let raw = response.content.trim().replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim();
